@@ -44,6 +44,7 @@ class ExamCrudController extends CrudController
     {
         CRUD::column('title');
         CRUD::column('display_mode')->type('text');
+        CRUD::column('shuffle_questions')->type('boolean')->label('Shuffle');
         CRUD::column('time_limit_minutes')->type('number')->label('Minutes');
         CRUD::column('expires_at')->type('datetime')->label('Expires at');
         CRUD::addColumn([
@@ -56,7 +57,13 @@ class ExamCrudController extends CrudController
             'name' => 'attempt_count',
             'label' => 'Attempts',
             'type' => 'closure',
-            'function' => fn (Exam $exam) => $exam->attempts()->count(),
+            'function' => fn (Exam $exam) => $exam->attempts()
+                ->whereHas('accessLink', fn ($query) => $query->where(function ($nestedQuery) {
+                    $nestedQuery->whereNull('meta')
+                        ->orWhere('meta->is_preview', false)
+                        ->orWhereNull('meta->is_preview');
+                }))
+                ->count(),
         ]);
         CRUD::column('is_published')->type('boolean')->label('Published');
         CRUD::button('preview')->stack('line')->view('vendor.backpack.crud.buttons.exam_preview');
@@ -80,6 +87,7 @@ class ExamCrudController extends CrudController
         CRUD::column('description');
         CRUD::column('instructions');
         CRUD::column('display_mode');
+        CRUD::column('shuffle_questions')->type('boolean');
         CRUD::column('time_limit_minutes');
         CRUD::column('autosave_interval_seconds');
         CRUD::column('expires_at')->type('datetime');
@@ -88,11 +96,15 @@ class ExamCrudController extends CrudController
         CRUD::column('show_index_number_field')->type('boolean');
         CRUD::column('disable_copy_paste')->type('boolean');
         CRUD::addColumn([
-            'name' => 'analytics',
-            'label' => 'Analytics',
+            'name' => 'exam_actions',
+            'label' => 'Actions',
             'type' => 'closure',
             'escaped' => false,
-            'function' => fn (Exam $exam) => '<a class="btn btn-sm btn-link" href="'.route('admin.exams.analytics', $exam).'">View analytics</a><br><a class="btn btn-sm btn-link" href="'.route('admin.exams.csv', $exam).'">Download CSV</a>',
+            'function' => fn (Exam $exam) => '<div class="d-flex flex-wrap gap-2">'
+                .'<a class="btn btn-sm btn-outline-primary" href="'.route('admin.exams.access', $exam).'">Manage access</a>'
+                .'<a class="btn btn-sm btn-outline-success" href="'.route('admin.exams.results', $exam).'">View results</a>'
+                .'<a class="btn btn-sm btn-outline-secondary" href="'.route('admin.exams.csv', $exam).'">Download CSV</a>'
+                .'</div>',
         ]);
     }
 
@@ -164,6 +176,18 @@ class ExamCrudController extends CrudController
                 'one_at_a_time' => 'One question at a time',
             ],
             'allows_null' => false,
+            'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
+        ]);
+        CRUD::addField([
+            'name' => 'shuffle_questions',
+            'label' => 'Question order',
+            'type' => 'select_from_array',
+            'options' => [
+                0 => 'Keep fixed order',
+                1 => 'Shuffle questions for each attempt',
+            ],
+            'allows_null' => false,
+            'default' => 0,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
         CRUD::field('time_limit_minutes')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);

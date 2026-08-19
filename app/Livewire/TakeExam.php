@@ -142,7 +142,21 @@ class TakeExam extends Component
 
     public function getQuestionsProperty(): Collection
     {
-        return $this->exam->questions->values();
+        $questions = $this->exam->questions->values();
+        $questionOrder = collect($this->attempt?->meta['question_order'] ?? [])
+            ->filter(fn ($questionId) => is_string($questionId) && $questionId !== '')
+            ->values();
+
+        if ($questionOrder->isEmpty()) {
+            return $questions;
+        }
+
+        $questionsById = $questions->keyBy('id');
+
+        return $questionOrder
+            ->map(fn (string $questionId) => $questionsById->get($questionId))
+            ->filter()
+            ->values();
     }
 
     public function getVisibleQuestionsProperty(): Collection
