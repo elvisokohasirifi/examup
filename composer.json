@@ -9,7 +9,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "backpack/activity-log": "^2.1",
         "backpack/crud": "7.1",
         "backpack/logmanager": "^5.1",

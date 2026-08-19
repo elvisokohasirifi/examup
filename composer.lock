@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8954a95e368694e71bc4d193eeb09611",
+    "content-hash": "ed3cc9aeb6b2a41067acc400e714acab",
     "packages": [
         {
             "name": "backpack/activity-log",
@@ -11456,7 +11456,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.3"
+        "php": "^8.4"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
