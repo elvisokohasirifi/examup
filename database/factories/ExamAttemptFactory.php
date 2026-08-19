@@ -25,6 +25,7 @@ class ExamAttemptFactory extends Factory
             'status' => ExamAttempt::STATUS_IN_PROGRESS,
             'student_name' => fake()->name(),
             'student_email' => fake()->safeEmail(),
+            'student_index_number' => fake()->bothify('IDX-####'),
             'started_at' => now(),
             'score' => 0,
             'max_score' => 0,

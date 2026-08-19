@@ -4,5 +4,5 @@
     target="_blank"
     rel="noopener noreferrer"
 >
-    Preview
+    Preview Exam
 </a>

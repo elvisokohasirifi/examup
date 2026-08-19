@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-5xl px-4 py-8" wire:poll.15s="refreshAttemptState">
+<div class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         <div class="flex flex-col gap-4 border-b border-amber-100 pb-6 md:flex-row md:items-end md:justify-between">
             <div class="space-y-2">
@@ -32,6 +32,9 @@
                         @if ($exam->time_limit_minutes)
                             <p>Time limit: {{ $exam->time_limit_minutes }} minutes</p>
                         @endif
+                        @if ($exam->expires_at)
+                            <p>Available until: {{ $exam->expires_at->format('M j, Y g:i A') }}</p>
+                        @endif
                         <p>Autosave: every response is saved as you type or select.</p>
                     </div>
                 </div>
@@ -46,23 +49,20 @@
                         Email
                         <input type="email" wire:model="candidate.student_email" class="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 outline-none ring-0 focus:border-amber-400" />
                     </label>
+                    @if ($exam->show_index_number_field)
+                        <label class="block text-sm font-medium text-slate-700">
+                            Index number
+                            <input type="text" wire:model="candidate.student_index_number" class="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 outline-none ring-0 focus:border-amber-400" />
+                        </label>
+                    @endif
                     @error('candidate.student_name') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     @error('candidate.student_email') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('candidate.student_index_number') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     <button type="submit" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Start exam</button>
                 </form>
             </div>
         @else
-            <div
-                class="mt-8 space-y-6"
-                x-data
-                @if ($exam->disable_copy_paste)
-                    x-on:copy.prevent="$wire.logClientEvent('copy')"
-                    x-on:cut.prevent="$wire.logClientEvent('cut')"
-                    x-on:paste.prevent="$wire.logClientEvent('paste')"
-                    x-on:blur.window="$wire.logClientEvent('blur')"
-                    x-on:visibilitychange.document="$wire.logClientEvent(document.hidden ? 'visibility_hidden' : 'visibility_visible')"
-                @endif
-            >
+            <div class="mt-8 space-y-6">
                 @if ($attempt->isFinished())
                     <div class="rounded-3xl bg-emerald-50 p-6 text-sm text-slate-700">
                         <h2 class="text-2xl font-semibold text-slate-900">Exam submitted</h2>
@@ -88,10 +88,10 @@
                         </div>
                         <div class="flex gap-3">
                             @if ($exam->display_mode === 'one_at_a_time')
-                                <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Previous</button>
-                                <button type="button" wire:click="nextQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Next</button>
+                                <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Previous</button>
+                                <button type="button" wire:click="nextQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Next</button>
                             @endif
-                            <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Submit exam</button>
+                            <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
                         </div>
                     </div>
 

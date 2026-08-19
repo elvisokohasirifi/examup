@@ -20,6 +20,7 @@ test('student can start and submit an exam from a secure link', function () {
         'created_by' => $examiner->id,
         'display_mode' => 'all',
         'show_score_to_student' => true,
+        'show_index_number_field' => true,
     ]);
 
     $question = Question::factory()->create([
@@ -47,9 +48,53 @@ test('student can start and submit an exam from a secure link', function () {
     ])
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
+        ->set('candidate.student_index_number', 'IDX-001')
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->set("responses.{$question->id}.selected_option_id", $option->id)
         ->call('submitExam', app(SubmitExamAttemptAction::class))
         ->assertSee('Exam submitted')
         ->assertSee('1.00 / 1.00');
+});
+
+test('index number is required only when the exam is configured to ask for it', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => true,
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertHasErrors(['candidate.student_index_number' => 'required']);
+});
+
+test('expired exams cannot be started even when the access link is still active', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'expires_at' => now()->subMinute(),
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+        'expires_at' => now()->addDay(),
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])->assertForbidden();
 });

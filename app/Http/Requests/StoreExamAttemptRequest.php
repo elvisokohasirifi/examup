@@ -25,6 +25,7 @@ class StoreExamAttemptRequest extends FormRequest
         return [
             'student_name' => ['required', 'string', 'max:255'],
             'student_email' => ['nullable', 'email', 'max:255'],
+            'student_index_number' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

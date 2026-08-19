@@ -45,6 +45,7 @@ class ExamAttemptCrudController extends CrudController
         ]);
         CRUD::column('student_name');
         CRUD::column('student_email');
+        CRUD::column('student_index_number');
         CRUD::column('status');
         CRUD::column('score');
         CRUD::column('score_percentage');
@@ -56,6 +57,7 @@ class ExamAttemptCrudController extends CrudController
     {
         CRUD::column('student_name');
         CRUD::column('student_email');
+        CRUD::column('student_index_number');
         CRUD::column('status');
         CRUD::column('score');
         CRUD::column('score_percentage');

@@ -31,9 +31,11 @@ class Exam extends Model
         'autosave_interval_seconds',
         'show_score_to_student',
         'show_correct_answers_to_student',
+        'show_index_number_field',
         'disable_copy_paste',
         'is_published',
         'published_at',
+        'expires_at',
         'settings',
     ];
 
@@ -53,9 +55,11 @@ class Exam extends Model
             'autosave_interval_seconds' => 'integer',
             'show_score_to_student' => 'boolean',
             'show_correct_answers_to_student' => 'boolean',
+            'show_index_number_field' => 'boolean',
             'disable_copy_paste' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
+            'expires_at' => 'datetime',
             'settings' => 'array',
         ];
     }
@@ -88,5 +92,10 @@ class Exam extends Model
     public function totalPoints(): float
     {
         return (float) $this->questions->sum('points');
+    }
+
+    public function hasExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
     }
 }
