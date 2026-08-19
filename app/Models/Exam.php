@@ -27,6 +27,7 @@ class Exam extends Model
         'description',
         'instructions',
         'display_mode',
+        'allow_back_navigation',
         'shuffle_questions',
         'time_limit_minutes',
         'autosave_interval_seconds',
@@ -54,6 +55,7 @@ class Exam extends Model
         return [
             'time_limit_minutes' => 'integer',
             'autosave_interval_seconds' => 'integer',
+            'allow_back_navigation' => 'boolean',
             'shuffle_questions' => 'boolean',
             'show_score_to_student' => 'boolean',
             'show_correct_answers_to_student' => 'boolean',

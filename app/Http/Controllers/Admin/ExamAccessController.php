@@ -48,7 +48,8 @@ class ExamAccessController extends Controller
 
             return redirect()
                 ->route('admin.exams.access', $exam)
-                ->with('status', 'Shareable link created: '.$link->examUrl());
+                ->with('status', 'Shareable link created successfully.')
+                ->with('shareable_link_url', $link->examUrl());
         }
 
         collect($request->input('emails', []))

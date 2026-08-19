@@ -15,6 +15,7 @@ test('admin can create an exam with nested questions and options from the exam f
             'description' => 'Semester one exam',
             'instructions' => 'Answer all questions.',
             'display_mode' => 'all',
+            'allow_back_navigation' => 1,
             'shuffle_questions' => 1,
             'time_limit_minutes' => 60,
             'autosave_interval_seconds' => 15,
@@ -53,6 +54,7 @@ test('admin can create an exam with nested questions and options from the exam f
     $this->assertDatabaseHas('exams', [
         'title' => 'Biology Midterm',
         'created_by' => $admin->id,
+        'allow_back_navigation' => 1,
         'shuffle_questions' => 1,
     ]);
 

@@ -29,6 +29,10 @@
                         @endif
                         <p>Questions: {{ $this->questions->count() }}</p>
                         <p>Display: {{ $exam->display_mode === 'all' ? 'All questions at once' : 'One question at a time' }}</p>
+                        @if ($exam->display_mode === 'one_at_a_time' && ! $exam->allow_back_navigation)
+                            <p>You cannot go back to a previous question once you continue.</p>
+                            <p>Each question must be answered before you can move to the next one.</p>
+                        @endif
                         @if ($exam->time_limit_minutes)
                             <p>Time limit: {{ $exam->time_limit_minutes }} minutes</p>
                         @endif
@@ -86,14 +90,29 @@
                         <div class="text-sm text-slate-600">
                             Progress: {{ min($currentQuestionIndex + 1, $this->questions->count()) }} / {{ $this->questions->count() }}
                         </div>
+                        @if ($exam->display_mode === 'one_at_a_time' && ! $exam->allow_back_navigation)
+                            <div class="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
+                                No backtracking
+                            </div>
+                        @endif
                         <div class="flex gap-3">
                             @if ($exam->display_mode === 'one_at_a_time')
-                                <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Previous</button>
-                                <button type="button" wire:click="nextQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Next</button>
+                                @if ($exam->allow_back_navigation && $currentQuestionIndex > 0)
+                                    <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Previous</button>
+                                @endif
+                                @if ($currentQuestionIndex < max($this->questions->count() - 1, 0))
+                                    <button type="button" wire:click="nextQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Next</button>
+                                @endif
                             @endif
                             <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
                         </div>
                     </div>
+
+                    @error('currentQuestionResponse')
+                        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                            {{ $message }}
+                        </div>
+                    @enderror
 
                     @foreach ($this->visibleQuestions as $question)
                         @php

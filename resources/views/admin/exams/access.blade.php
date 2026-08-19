@@ -9,6 +9,20 @@
             <div class="alert alert-success">{{ session('status') }}</div>
         @endif
 
+        @if (session('shareable_link_url'))
+            <div class="card mb-4 border-success">
+                <div class="card-body">
+                    <h4 class="card-title mb-2">Shareable link ready</h4>
+                    <p class="text-muted">Copy and share this exam link.</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" readonly value="{{ session('shareable_link_url') }}" data-shareable-link-input>
+                        <button type="button" class="btn btn-success" data-copy-link-button data-copy-text="{{ session('shareable_link_url') }}">Copy link</button>
+                    </div>
+                    <div class="small text-muted mt-2" data-copy-link-feedback></div>
+                </div>
+            </div>
+        @endif
+
         <div class="card mb-4">
             <div class="card-body">
                 <h4 class="card-title">Create a shareable link</h4>
@@ -63,7 +77,14 @@
                                 <tr>
                                     <td>{{ data_get($link->meta, 'shareable') ? 'Shareable' : 'Individual' }}</td>
                                     <td>{{ $link->email ?: 'Everyone with link' }}</td>
-                                    <td><a href="{{ $link->examUrl() }}" target="_blank" rel="noopener noreferrer">Open link</a></td>
+                                    <td>
+                                        <div class="d-flex flex-wrap align-items-center gap-2">
+                                            <a href="{{ $link->examUrl() }}" target="_blank" rel="noopener noreferrer">Open link</a>
+                                            @if (data_get($link->meta, 'shareable'))
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-link-button data-copy-text="{{ $link->examUrl() }}">Copy</button>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td>{{ $link->last_sent_at?->format('M j, Y g:i A') ?: '-' }}</td>
                                     <td>{{ $link->expires_at?->format('M j, Y g:i A') ?: '-' }}</td>
                                     <td>{{ $link->is_active ? 'Active' : 'Disabled' }}</td>
@@ -81,3 +102,39 @@
     </div>
 </div>
 @endsection
+
+@push('after_scripts')
+<script>
+    document.querySelectorAll('[data-copy-link-button]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const text = button.getAttribute('data-copy-text') ?? '';
+
+            if (!text) {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+
+                const feedback = document.querySelector('[data-copy-link-feedback]');
+                if (feedback) {
+                    feedback.textContent = 'Link copied to clipboard.';
+                }
+
+                const originalText = button.textContent;
+                button.textContent = 'Copied';
+
+                window.setTimeout(() => {
+                    button.textContent = originalText;
+                }, 1500);
+            } catch (error) {
+                const input = document.querySelector('[data-shareable-link-input]');
+                if (input instanceof HTMLInputElement) {
+                    input.focus();
+                    input.select();
+                }
+            }
+        });
+    });
+</script>
+@endpush

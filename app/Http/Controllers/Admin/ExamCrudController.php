@@ -44,6 +44,7 @@ class ExamCrudController extends CrudController
     {
         CRUD::column('title');
         CRUD::column('display_mode')->type('text');
+        CRUD::column('allow_back_navigation')->type('boolean')->label('Back nav');
         CRUD::column('shuffle_questions')->type('boolean')->label('Shuffle');
         CRUD::column('time_limit_minutes')->type('number')->label('Minutes');
         CRUD::column('expires_at')->type('datetime')->label('Expires at');
@@ -87,6 +88,7 @@ class ExamCrudController extends CrudController
         CRUD::column('description');
         CRUD::column('instructions');
         CRUD::column('display_mode');
+        CRUD::column('allow_back_navigation')->type('boolean');
         CRUD::column('shuffle_questions')->type('boolean');
         CRUD::column('time_limit_minutes');
         CRUD::column('autosave_interval_seconds');
@@ -178,6 +180,11 @@ class ExamCrudController extends CrudController
             'allows_null' => false,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
+        CRUD::field('allow_back_navigation')
+            ->label('Allow students to go back to previous questions')
+            ->type('checkbox')
+            ->default(true)
+            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::addField([
             'name' => 'shuffle_questions',
             'label' => 'Question order',

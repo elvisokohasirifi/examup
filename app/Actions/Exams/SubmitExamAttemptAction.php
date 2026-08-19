@@ -84,7 +84,7 @@ class SubmitExamAttemptAction
             ];
         }
 
-        $normalizedAnswer = Str::lower(trim((string) $answer->answer_text));
+        $normalizedAnswer = Str::lower(Str::squish((string) $answer->answer_text));
         $acceptedAnswers = $question->normalizedAcceptedAnswers();
         $isCorrect = $acceptedAnswers->contains($normalizedAnswer);
 

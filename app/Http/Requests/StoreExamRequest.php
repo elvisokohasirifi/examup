@@ -43,6 +43,7 @@ class StoreExamRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'instructions' => ['nullable', 'string'],
             'display_mode' => ['required', Rule::in(['all', 'one_at_a_time'])],
+            'allow_back_navigation' => ['boolean'],
             'shuffle_questions' => ['boolean'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
             'autosave_interval_seconds' => ['required', 'integer', 'min:5', 'max:300'],
@@ -112,6 +113,7 @@ class StoreExamRequest extends FormRequest
             ->all();
 
         $this->merge([
+            'allow_back_navigation' => filter_var($this->input('allow_back_navigation', true), FILTER_VALIDATE_BOOL),
             'questions' => $normalizedQuestions,
         ]);
     }

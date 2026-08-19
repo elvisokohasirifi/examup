@@ -11,6 +11,7 @@ use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\SuspiciousActivity;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class TakeExam extends Component
@@ -84,12 +85,23 @@ class TakeExam extends Component
 
     public function previousQuestion(SaveExamAnswerAction $saveExamAnswer): void
     {
+        if (! $this->canGoBack()) {
+            return;
+        }
+
         $this->saveCurrentQuestion($saveExamAnswer);
         $this->currentQuestionIndex = max($this->currentQuestionIndex - 1, 0);
     }
 
     public function nextQuestion(SaveExamAnswerAction $saveExamAnswer): void
     {
+        if (! $this->canAdvanceFromCurrentQuestion()) {
+            $this->addError('currentQuestionResponse', 'Answer this question before continuing. You cannot go back once you move on.');
+
+            return;
+        }
+
+        $this->resetErrorBag('currentQuestionResponse');
         $this->saveCurrentQuestion($saveExamAnswer);
         $this->currentQuestionIndex = min($this->currentQuestionIndex + 1, max($this->questions->count() - 1, 0));
     }
@@ -114,10 +126,21 @@ class TakeExam extends Component
             return;
         }
 
+        if (! $automatic && ! $this->canSubmitCurrentState()) {
+            $message = $this->exam->display_mode === 'one_at_a_time' && ! $this->exam->allow_back_navigation
+                ? 'Answer this question before submitting. You cannot go back once you move on.'
+                : 'Answer this question before submitting.';
+
+            $this->addError('currentQuestionResponse', $message);
+
+            return;
+        }
+
         foreach ($this->questions as $question) {
             app(SaveExamAnswerAction::class)->handle($this->attempt, $question, $this->payloadForQuestion($question));
         }
 
+        $this->resetErrorBag('currentQuestionResponse');
         $this->attempt = $submitExamAttempt->handle($this->attempt, $automatic);
         $this->submitted = true;
     }
@@ -221,7 +244,60 @@ class TakeExam extends Component
         }
 
         return [
-            'answer_text' => trim((string) ($response['answer_text'] ?? '')),
+            'answer_text' => $this->normalizeAnswerText((string) ($response['answer_text'] ?? '')),
         ];
+    }
+
+    private function canGoBack(): bool
+    {
+        return $this->exam->display_mode === 'one_at_a_time'
+            && $this->exam->allow_back_navigation
+            && $this->currentQuestionIndex > 0;
+    }
+
+    private function canAdvanceFromCurrentQuestion(): bool
+    {
+        if ($this->exam->display_mode !== 'one_at_a_time' || $this->exam->allow_back_navigation) {
+            return true;
+        }
+
+        $question = $this->questions->get($this->currentQuestionIndex);
+
+        return $question instanceof Question && $this->questionHasResponse($question);
+    }
+
+    private function canSubmitCurrentState(): bool
+    {
+        if ($this->exam->display_mode !== 'one_at_a_time' || $this->exam->allow_back_navigation) {
+            return true;
+        }
+
+        $question = $this->questions->get($this->currentQuestionIndex);
+
+        return $question instanceof Question && $this->questionHasResponse($question);
+    }
+
+    private function questionHasResponse(Question $question): bool
+    {
+        $response = $this->responses[$question->id] ?? [];
+
+        if ($question->isMultipleChoice()) {
+            if ($question->allows_multiple_selection) {
+                return collect($response['selected_option_ids'] ?? [])
+                    ->filter(fn (mixed $value): bool => filled($value))
+                    ->isNotEmpty();
+            }
+
+            return filled($response['selected_option_id'] ?? null);
+        }
+
+        return $this->normalizeAnswerText((string) ($response['answer_text'] ?? '')) !== '';
+    }
+
+    private function normalizeAnswerText(string $answer): string
+    {
+        return Str::of($answer)
+            ->squish()
+            ->toString();
     }
 }

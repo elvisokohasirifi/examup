@@ -18,6 +18,7 @@ test('admin can generate a shareable link from the exam access page', function (
         ]);
 
     $response->assertRedirect(route('admin.exams.access', $exam));
+    $response->assertSessionHas('shareable_link_url');
 
     $this->assertDatabaseHas('exam_access_links', [
         'exam_id' => $exam->id,

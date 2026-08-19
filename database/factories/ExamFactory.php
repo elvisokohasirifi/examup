@@ -24,6 +24,7 @@ class ExamFactory extends Factory
             'description' => fake()->paragraph(),
             'instructions' => fake()->paragraph(),
             'display_mode' => fake()->randomElement(['all', 'one_at_a_time']),
+            'allow_back_navigation' => fake()->boolean(80),
             'shuffle_questions' => fake()->boolean(),
             'time_limit_minutes' => fake()->optional()->numberBetween(10, 90),
             'autosave_interval_seconds' => 15,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Exams\SaveExamAnswerAction;
 use App\Actions\Exams\StartExamAttemptAction;
 use App\Actions\Exams\SubmitExamAttemptAction;
 use App\Livewire\TakeExam;
@@ -54,7 +55,7 @@ test('student can start and submit an exam from a secure link', function () {
         ->set("responses.{$question->id}.selected_option_id", $option->id)
         ->call('submitExam', app(SubmitExamAttemptAction::class))
         ->assertSee('Exam submitted')
-        ->assertSee('1.00 / 1.00');
+        ->assertSee('1 / 1');
 });
 
 test('index number is required only when the exam is configured to ask for it', function () {
@@ -86,6 +87,7 @@ test('shuffled exams persist a question order for each attempt', function () {
     $exam = Exam::factory()->create([
         'created_by' => $examiner->id,
         'shuffle_questions' => true,
+        'show_index_number_field' => false,
     ]);
 
     $questions = Question::factory()->count(3)->sequence(
@@ -133,4 +135,56 @@ test('expired exams cannot be started even when the access link is still active'
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])->assertForbidden();
+});
+
+test('students cannot go back and must answer each question before proceeding when back navigation is disabled', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'display_mode' => 'one_at_a_time',
+        'allow_back_navigation' => false,
+        'show_index_number_field' => false,
+    ]);
+
+    $firstQuestion = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'type' => Question::TYPE_MULTIPLE_CHOICE,
+        'position' => 1,
+    ]);
+
+    $firstOption = QuestionOption::factory()->create([
+        'question_id' => $firstQuestion->id,
+        'label' => 'First answer',
+        'is_correct' => true,
+    ]);
+
+    $secondQuestion = Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 2,
+        'accepted_answers' => ['Laravel'],
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertDontSee('Previous')
+        ->call('nextQuestion', app(SaveExamAnswerAction::class))
+        ->assertHasErrors(['currentQuestionResponse'])
+        ->set("responses.{$firstQuestion->id}.selected_option_id", $firstOption->id)
+        ->call('nextQuestion', app(SaveExamAnswerAction::class))
+        ->assertSet('currentQuestionIndex', 1)
+        ->assertDontSee('Next')
+        ->assertDontSee('Previous')
+        ->assertSee('No backtracking')
+        ->assertSee($secondQuestion->prompt);
 });

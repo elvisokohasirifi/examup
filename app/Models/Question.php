@@ -80,7 +80,7 @@ class Question extends Model
     {
         return collect($this->accepted_answers)
             ->filter()
-            ->map(fn (string $answer): string => Str::lower(trim($answer)))
+            ->map(fn (string $answer): string => Str::lower(Str::squish($answer)))
             ->values();
     }
 
@@ -93,6 +93,7 @@ class Question extends Model
         $this->attributes['accepted_answers'] = json_encode(
             collect(Arr::wrap($value))
                 ->map(fn ($answer) => trim((string) $answer))
+                ->map(fn (string $answer): string => Str::squish($answer))
                 ->filter()
                 ->values()
                 ->all(),
