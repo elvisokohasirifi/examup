@@ -5,6 +5,7 @@ use App\Actions\Exams\SubmitExamAttemptAction;
 use App\Livewire\TakeExam;
 use App\Models\Exam;
 use App\Models\ExamAccessLink;
+use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\User;
@@ -77,6 +78,41 @@ test('index number is required only when the exam is configured to ask for it', 
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->assertHasErrors(['candidate.student_index_number' => 'required']);
+});
+
+test('shuffled exams persist a question order for each attempt', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'shuffle_questions' => true,
+    ]);
+
+    $questions = Question::factory()->count(3)->sequence(
+        ['exam_id' => $exam->id, 'position' => 1],
+        ['exam_id' => $exam->id, 'position' => 2],
+        ['exam_id' => $exam->id, 'position' => 3],
+    )->create();
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class));
+
+    $attempt = ExamAttempt::query()->findOrFail($component->get('attempt.id'));
+
+    expect($attempt->meta['question_order'] ?? [])
+        ->toHaveCount(3)
+        ->and(collect($attempt->meta['question_order'])->sort()->values()->all())
+        ->toBe($questions->pluck('id')->sort()->values()->all());
 });
 
 test('expired exams cannot be started even when the access link is still active', function () {

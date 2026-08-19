@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Admin\ExamAccessLinkCrudController;
-use App\Http\Controllers\Admin\ExamAnalyticsController;
-use App\Http\Controllers\Admin\ExamAttemptCrudController;
+use App\Http\Controllers\Admin\ExamAccessController;
+use App\Http\Controllers\Admin\ExamAttemptCsvController;
 use App\Http\Controllers\Admin\ExamCrudController;
+use App\Http\Controllers\Admin\ExamResultsController;
 use Illuminate\Support\Facades\Route;
 
 // --------------------------
@@ -21,10 +21,10 @@ Route::group([
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
     Route::crud('exam', ExamCrudController::class);
-    Route::crud('exam-access-link', ExamAccessLinkCrudController::class);
-    Route::crud('exam-attempt', ExamAttemptCrudController::class);
+    Route::get('exams/{exam}/access', [ExamAccessController::class, 'show'])->name('admin.exams.access');
+    Route::post('exams/{exam}/access', [ExamAccessController::class, 'store'])->name('admin.exams.access.store');
     Route::get('exams/{exam}/preview', [ExamCrudController::class, 'preview'])->name('admin.exams.preview');
-    Route::get('exams/{exam}/analytics', ExamAnalyticsController::class)->name('admin.exams.analytics');
+    Route::get('exams/{exam}/results', ExamResultsController::class)->name('admin.exams.results');
     Route::get('exams/{exam}/results.csv', ExamAttemptCsvController::class)->name('admin.exams.csv');
 }); // this should be the absolute last line of this file
 
