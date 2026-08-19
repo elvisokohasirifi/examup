@@ -96,10 +96,15 @@
                     </div>
 
                     @foreach ($this->visibleQuestions as $question)
+                        @php
+                            $displayQuestionNumber = $exam->display_mode === 'one_at_a_time'
+                                ? $currentQuestionIndex + 1
+                                : $loop->iteration;
+                        @endphp
                         <section wire:key="question-{{ $question->id }}" class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Question {{ $question->position }}</p>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Question {{ $displayQuestionNumber }}</p>
                                     <h2 class="mt-2 text-xl font-semibold text-slate-900">{{ $question->prompt }}</h2>
                                     @if ($question->help_text)
                                         <p class="mt-2 text-sm leading-6 text-slate-600">{{ $question->help_text }}</p>
