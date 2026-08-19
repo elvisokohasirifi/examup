@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 
 class Question extends Model
@@ -70,6 +71,11 @@ class Question extends Model
         return $this->type === self::TYPE_FILL_IN;
     }
 
+    public function formattedPoints(): string
+    {
+        return self::formatDisplayNumber($this->points);
+    }
+
     public function normalizedAcceptedAnswers(): Collection
     {
         return collect($this->accepted_answers)
@@ -92,5 +98,16 @@ class Question extends Model
                 ->all(),
             JSON_THROW_ON_ERROR,
         );
+    }
+
+    private static function formatDisplayNumber(mixed $value): string
+    {
+        $number = round((float) $value, 1);
+
+        if ((float) ((int) $number) === $number) {
+            return (string) ((int) $number);
+        }
+
+        return Number::format($number, precision: 1);
     }
 }

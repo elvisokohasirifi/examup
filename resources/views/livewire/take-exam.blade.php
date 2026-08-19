@@ -68,7 +68,7 @@
                         <h2 class="text-2xl font-semibold text-slate-900">Exam submitted</h2>
                         <p class="mt-3">Your responses have been recorded.</p>
                         @if ($exam->show_score_to_student)
-                            <p class="mt-2">Score: {{ $attempt->score }} / {{ $attempt->max_score }} ({{ $attempt->score_percentage }}%)</p>
+                            <p class="mt-2">Score: {{ $attempt->formattedScore() }} / {{ $attempt->formattedMaxScore() }} ({{ $attempt->formattedScorePercentage() }}%)</p>
                         @endif
                         @if ($exam->show_correct_answers_to_student)
                             <div class="mt-4 space-y-4">
@@ -110,7 +110,7 @@
                                         <p class="mt-2 text-sm leading-6 text-slate-600">{{ $question->help_text }}</p>
                                     @endif
                                 </div>
-                                <div class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{{ $question->points }} pts</div>
+                                <div class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{{ $question->formattedPoints() }} pts</div>
                             </div>
 
                             @if ($question->isMultipleChoice())

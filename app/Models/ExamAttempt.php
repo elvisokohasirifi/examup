@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Number;
 
 class ExamAttempt extends Model
 {
@@ -85,5 +86,31 @@ class ExamAttempt extends Model
     public function isFinished(): bool
     {
         return in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_AUTO_SUBMITTED], true);
+    }
+
+    public function formattedScore(): string
+    {
+        return self::formatDisplayNumber($this->score);
+    }
+
+    public function formattedMaxScore(): string
+    {
+        return self::formatDisplayNumber($this->max_score);
+    }
+
+    public function formattedScorePercentage(): string
+    {
+        return self::formatDisplayNumber($this->score_percentage);
+    }
+
+    private static function formatDisplayNumber(mixed $value): string
+    {
+        $number = round((float) $value, 1);
+
+        if ((float) ((int) $number) === $number) {
+            return (string) ((int) $number);
+        }
+
+        return Number::format($number, precision: 1);
     }
 }

@@ -6,7 +6,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
             <div>
                 <h2 class="mb-2">{{ $exam->title }} results</h2>
-                <p class="mb-0">Attempts: {{ $stats['attempt_count'] }} | Average score: {{ $stats['average_score'] }} | Highest: {{ $stats['highest_score'] }} | Lowest: {{ $stats['lowest_score'] }} | Average completion time: {{ $stats['average_completion_time_seconds'] }} seconds</p>
+                <p class="mb-0">Attempts: {{ $stats['attempt_count'] }} | Average score: {{ \Illuminate\Support\Number::format($stats['average_score'], precision: fmod((float) $stats['average_score'], 1.0) === 0.0 ? 0 : 1) }} | Highest: {{ \Illuminate\Support\Number::format($stats['highest_score'], precision: fmod((float) $stats['highest_score'], 1.0) === 0.0 ? 0 : 1) }} | Lowest: {{ \Illuminate\Support\Number::format($stats['lowest_score'], precision: fmod((float) $stats['lowest_score'], 1.0) === 0.0 ? 0 : 1) }} | Average completion time: {{ $stats['average_completion_time_seconds'] }} seconds</p>
             </div>
             <a class="btn btn-outline-primary" href="{{ route('admin.exams.csv', $exam) }}">Download CSV results</a>
         </div>
@@ -33,7 +33,7 @@
                                     <td>{{ $attempt->student_email ?: '-' }}</td>
                                     <td>{{ $attempt->student_index_number ?: '-' }}</td>
                                     <td>{{ str_replace('_', ' ', $attempt->status) }}</td>
-                                    <td>{{ $attempt->score }} / {{ $attempt->max_score }} ({{ $attempt->score_percentage }}%)</td>
+                                    <td>{{ $attempt->formattedScore() }} / {{ $attempt->formattedMaxScore() }} ({{ $attempt->formattedScorePercentage() }}%)</td>
                                     <td>{{ $attempt->submitted_at?->format('M j, Y g:i A') ?: '-' }}</td>
                                 </tr>
                             @empty
