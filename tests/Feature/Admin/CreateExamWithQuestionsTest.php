@@ -17,6 +17,7 @@ test('admin can create an exam with nested questions and options from the exam f
             'display_mode' => 'all',
             'time_limit_minutes' => 60,
             'autosave_interval_seconds' => 15,
+            'expires_at' => now()->addWeek()->toDateTimeString(),
             'show_score_to_student' => 1,
             'show_correct_answers_to_student' => 0,
             'disable_copy_paste' => 1,

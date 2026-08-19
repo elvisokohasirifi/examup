@@ -17,6 +17,7 @@ class StartExamAttemptAction
             'exam_access_link_id' => $accessLink->id,
             'student_name' => $studentData['student_name'],
             'student_email' => $studentData['student_email'] ?? $accessLink->email,
+            'student_index_number' => $studentData['student_index_number'] ?? null,
             'status' => ExamAttempt::STATUS_IN_PROGRESS,
             'started_at' => now(),
             'expires_at' => $exam->time_limit_minutes === null ? null : now()->addMinutes($exam->time_limit_minutes),

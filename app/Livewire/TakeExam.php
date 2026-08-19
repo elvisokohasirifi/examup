@@ -24,6 +24,7 @@ class TakeExam extends Component
     public array $candidate = [
         'student_name' => '',
         'student_email' => '',
+        'student_index_number' => '',
     ];
 
     public array $responses = [];
@@ -44,24 +45,36 @@ class TakeExam extends Component
         abort_unless($this->accessLink->isAvailable(), 403);
 
         $this->exam = $this->accessLink->exam;
+        abort_unless(! $this->exam->hasExpired(), 403);
         $this->candidate['student_email'] = $this->accessLink->email ?? '';
     }
 
     public function startAttempt(StartExamAttemptAction $startExamAttempt): void
     {
-        $this->validate([
+        $rules = [
             'candidate.student_name' => ['required', 'string', 'max:255'],
             'candidate.student_email' => ['nullable', 'email', 'max:255'],
-        ]);
+        ];
+
+        $rules['candidate.student_index_number'] = $this->exam->show_index_number_field
+            ? ['required', 'string', 'max:255']
+            : ['nullable', 'string', 'max:255'];
+
+        $this->validate($rules);
 
         abort_unless($this->accessLink->isAvailable(), 403);
+        abort_unless(! $this->exam->hasExpired(), 403);
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
     }
 
-    public function updatedResponses(mixed $value, string $key, SaveExamAnswerAction $saveExamAnswer): void
+    public function updatedResponses(mixed $value, ?string $key, SaveExamAnswerAction $saveExamAnswer): void
     {
         if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        if ($key === null || $key === '') {
             return;
         }
 
@@ -88,8 +101,9 @@ class TakeExam extends Component
         }
 
         $this->attempt->refresh();
+        $this->exam->refresh();
 
-        if ($this->attempt->expires_at?->isPast()) {
+        if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
             $this->submitExam($submitExamAttempt, true);
         }
     }

@@ -32,6 +32,7 @@ class ExamAttempt extends Model
         'status',
         'student_name',
         'student_email',
+        'student_index_number',
         'access_token_hash',
         'started_at',
         'submitted_at',

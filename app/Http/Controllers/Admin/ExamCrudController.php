@@ -45,6 +45,7 @@ class ExamCrudController extends CrudController
         CRUD::column('title');
         CRUD::column('display_mode')->type('text');
         CRUD::column('time_limit_minutes')->type('number')->label('Minutes');
+        CRUD::column('expires_at')->type('datetime')->label('Expires at');
         CRUD::addColumn([
             'name' => 'question_count',
             'label' => 'Questions',
@@ -81,8 +82,10 @@ class ExamCrudController extends CrudController
         CRUD::column('display_mode');
         CRUD::column('time_limit_minutes');
         CRUD::column('autosave_interval_seconds');
+        CRUD::column('expires_at')->type('datetime');
         CRUD::column('show_score_to_student')->type('boolean');
         CRUD::column('show_correct_answers_to_student')->type('boolean');
+        CRUD::column('show_index_number_field')->type('boolean');
         CRUD::column('disable_copy_paste')->type('boolean');
         CRUD::addColumn([
             'name' => 'analytics',
@@ -165,8 +168,13 @@ class ExamCrudController extends CrudController
         ]);
         CRUD::field('time_limit_minutes')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('autosave_interval_seconds')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        CRUD::field('expires_at')->type('datetime')->label('Exam expires at')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('show_score_to_student')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('show_correct_answers_to_student')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        CRUD::field('show_index_number_field')
+            ->label('Ask for student index number')
+            ->type('checkbox')
+            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('disable_copy_paste')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('is_published')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::addField([

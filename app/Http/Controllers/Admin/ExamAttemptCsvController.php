@@ -19,6 +19,7 @@ class ExamAttemptCsvController extends Controller
             fputcsv($handle, [
                 'student_name',
                 'student_email',
+                'student_index_number',
                 'status',
                 'score',
                 'score_percentage',
@@ -31,6 +32,7 @@ class ExamAttemptCsvController extends Controller
                 fputcsv($handle, [
                     $attempt->student_name,
                     $attempt->student_email,
+                    $attempt->student_index_number,
                     $attempt->status,
                     $attempt->score,
                     $attempt->score_percentage,
