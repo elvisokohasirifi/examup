@@ -52,6 +52,12 @@
         border-top: 1px solid color-mix(in srgb, var(--bs-border-color, #dee2e6) 75%, transparent) !important;
     }
 
+    #{{ $fieldId }} [data-bottom-add-question] {
+        border-radius: 1rem;
+        border-style: dashed;
+        min-height: 4rem;
+    }
+
     #{{ $fieldId }} [data-question-row] {
         color: var(--bs-body-color, inherit);
     }
@@ -97,9 +103,8 @@
 
     <div id="exam-step-questions" class="mb-2"></div>
     <div id="{{ $fieldId }}" class="border rounded-4 p-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="mb-3">
             <div class="text-muted small">Add and order the questions directly inside the exam form.</div>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-add-question-row>Add question</button>
         </div>
 
         <div class="d-flex flex-column gap-4" data-question-rows>
@@ -185,6 +190,12 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="mt-4 d-grid">
+            <button type="button" class="btn btn-outline-primary btn-lg fw-semibold" data-add-question-row data-bottom-add-question>
+                Add another question
+            </button>
+        </div>
     </div>
 
     @if (isset($field['hint']))
@@ -203,7 +214,7 @@
         container.dataset.initialized = 'true';
 
         const questionRows = container.querySelector('[data-question-rows]');
-        const addQuestionButton = container.querySelector('[data-add-question-row]');
+        const addQuestionButtons = container.querySelectorAll('[data-add-question-row]');
         const multipleChoiceType = @js(Question::TYPE_MULTIPLE_CHOICE);
         const fillInType = @js(Question::TYPE_FILL_IN);
 
@@ -313,13 +324,18 @@
             optionsHolder.insertAdjacentHTML('beforeend', optionRowTemplate(questionIndex, 0));
         };
 
-        addQuestionButton?.addEventListener('click', () => {
+        const addQuestion = () => {
             const index = questionRows.querySelectorAll('[data-question-row]').length;
             questionRows.insertAdjacentHTML('beforeend', questionRowTemplate(index));
             const newRow = questionRows.querySelectorAll('[data-question-row]')[index];
             ensureOptionRow(newRow);
             syncQuestionType(newRow);
             renumberQuestions();
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        addQuestionButtons.forEach((button) => {
+            button.addEventListener('click', addQuestion);
         });
 
         questionRows.addEventListener('click', (event) => {
