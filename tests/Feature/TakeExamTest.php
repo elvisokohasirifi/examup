@@ -6,6 +6,7 @@ use App\Actions\Exams\SubmitExamAttemptAction;
 use App\Livewire\TakeExam;
 use App\Models\Exam;
 use App\Models\ExamAccessLink;
+use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\QuestionOption;
@@ -52,10 +53,66 @@ test('student can start and submit an exam from a secure link', function () {
         ->set('candidate.student_email', 'student@example.com')
         ->set('candidate.student_index_number', 'IDX-001')
         ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertDispatched('exam-attempt-started')
         ->set("responses.{$question->id}.selected_option_id", $option->id)
         ->call('submitExam', app(SubmitExamAttemptAction::class))
         ->assertSee('Exam submitted')
         ->assertSee('1 / 1');
+});
+
+test('multiple-choice selections are tracked independently for each option', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'display_mode' => 'all',
+        'show_index_number_field' => false,
+    ]);
+
+    $question = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'type' => Question::TYPE_MULTIPLE_CHOICE,
+        'allows_multiple_selection' => true,
+        'position' => 1,
+    ]);
+
+    $selectedOption = QuestionOption::factory()->create([
+        'question_id' => $question->id,
+        'position' => 1,
+        'label' => 'Selected option',
+        'is_correct' => true,
+    ]);
+
+    $unselectedOption = QuestionOption::factory()->create([
+        'question_id' => $question->id,
+        'position' => 2,
+        'label' => 'Unselected option',
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->set("responses.{$question->id}.selected_options.{$selectedOption->id}", true)
+        ->assertSet("responses.{$question->id}.selected_options.{$selectedOption->id}", true)
+        ->call('submitExam', app(SubmitExamAttemptAction::class));
+
+    $answer = ExamAnswer::query()
+        ->where('exam_attempt_id', $component->get('attempt.id'))
+        ->where('question_id', $question->id)
+        ->sole();
+
+    expect($answer->selected_option_ids)
+        ->toBe([$selectedOption->id])
+        ->not->toContain($unselectedOption->id);
 });
 
 test('index number is required only when the exam is configured to ask for it', function () {
@@ -79,6 +136,27 @@ test('index number is required only when the exam is configured to ask for it', 
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->assertHasErrors(['candidate.student_index_number' => 'required']);
+});
+
+test('student email addresses must include a valid domain suffix', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'k@gma')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertHasErrors(['candidate.student_email']);
 });
 
 test('shuffled exams persist a question order for each attempt', function () {

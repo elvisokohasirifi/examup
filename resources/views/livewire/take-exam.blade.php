@@ -54,6 +54,19 @@
                     </div>
                 </div>
 
+                @if ($resumableAttempt)
+                    <div class="space-y-4 rounded-3xl bg-amber-50 p-6">
+                        <h2 class="text-xl font-semibold text-slate-900">Resume your saved attempt</h2>
+                        <p class="text-sm leading-6 text-slate-600">Enter the email address you used to begin this exam before continuing.</p>
+                        <label class="block text-sm font-medium text-slate-700">
+                            Email
+                            <input type="email" wire:model="candidate.student_email" class="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 outline-none ring-0 focus:border-amber-400" />
+                        </label>
+                        @error('candidate.student_email') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <button type="button" wire:click="resumeAttempt" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Resume exam</button>
+                        <button type="button" wire:click="startNewAttempt" class="block text-sm font-medium text-slate-700 underline decoration-amber-400 underline-offset-4">Start a new attempt</button>
+                    </div>
+                @else
                 <form wire:submit="startAttempt" class="space-y-4 rounded-3xl bg-amber-50 p-6">
                     <h2 class="text-xl font-semibold text-slate-900">Student details</h2>
                     <label class="block text-sm font-medium text-slate-700">
@@ -75,6 +88,7 @@
                     @error('candidate.student_index_number') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     <button type="submit" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Start exam</button>
                 </form>
+                @endif
             </div>
         @else
             <div class="mt-8 space-y-6">
@@ -147,12 +161,20 @@
                                 <div class="mt-6 grid gap-3">
                                     @foreach ($question->options as $option)
                                         <label class="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 hover:border-amber-300">
-                                            <input
-                                                type="{{ $question->allows_multiple_selection ? 'checkbox' : 'radio' }}"
-                                                wire:model.live="responses.{{ $question->id }}.{{ $question->allows_multiple_selection ? 'selected_option_ids' : 'selected_option_id' }}"
-                                                value="{{ $option->id }}"
-                                                class="mt-1 size-4 border-slate-300 text-amber-500 focus:ring-amber-400"
-                                            />
+                                            @if ($question->allows_multiple_selection)
+                                                <input
+                                                    type="checkbox"
+                                                    wire:model.live="responses.{{ $question->id }}.selected_options.{{ $option->id }}"
+                                                    class="mt-1 size-4 border-slate-300 text-amber-500 focus:ring-amber-400"
+                                                />
+                                            @else
+                                                <input
+                                                    type="radio"
+                                                    wire:model.live="responses.{{ $question->id }}.selected_option_id"
+                                                    value="{{ $option->id }}"
+                                                    class="mt-1 size-4 border-slate-300 text-amber-500 focus:ring-amber-400"
+                                                />
+                                            @endif
                                             <span class="text-sm leading-6 text-slate-700">{{ $option->label }}</span>
                                         </label>
                                     @endforeach

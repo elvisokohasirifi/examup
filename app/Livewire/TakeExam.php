@@ -23,6 +23,8 @@ class TakeExam extends Component
 
     public ?ExamAttempt $attempt = null;
 
+    public ?ExamAttempt $resumableAttempt = null;
+
     public array $candidate = [
         'student_name' => '',
         'student_email' => '',
@@ -54,10 +56,21 @@ class TakeExam extends Component
         $this->exam = $this->accessLink->exam;
         $this->candidate['student_email'] = $this->accessLink->email ?? '';
 
-        $this->attempt = $resumeExamAttempt->fromSession(
+        $storedAttempt = $resumeExamAttempt->fromSession(
             $this->accessLink,
             session($this->attemptSessionKey()),
-        ) ?? $resumeExamAttempt->activeForIndividualLink($this->accessLink);
+        ) ?? $resumeExamAttempt->fromRecoveryUrl(
+            $this->accessLink,
+            request()->query('attempt'),
+        );
+
+        if (filled($this->accessLink->email)) {
+            $this->attempt = $storedAttempt ?? $resumeExamAttempt->activeForIndividualLink($this->accessLink);
+        } elseif ($storedAttempt !== null && ! $storedAttempt->isFinished()) {
+            $this->resumableAttempt = $storedAttempt;
+        } else {
+            $this->attempt = $storedAttempt;
+        }
 
         if ($this->attempt !== null) {
             $this->rememberAttempt();
@@ -86,7 +99,7 @@ class TakeExam extends Component
 
         $rules = [
             'candidate.student_name' => ['required', 'string', 'max:255'],
-            'candidate.student_email' => ['nullable', 'email', 'max:255'],
+            'candidate.student_email' => $this->studentEmailRules(),
         ];
 
         $rules['candidate.student_index_number'] = $this->exam->show_index_number_field
@@ -101,6 +114,39 @@ class TakeExam extends Component
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
         $this->rememberAttempt();
+        $this->dispatch('exam-attempt-started', attemptId: $this->attempt->id);
+    }
+
+    public function resumeAttempt(): void
+    {
+        if ($this->resumableAttempt === null) {
+            return;
+        }
+
+        $this->validate([
+            'candidate.student_email' => $this->studentEmailRules(),
+        ]);
+
+        if (! hash_equals(
+            Str::of((string) $this->resumableAttempt->student_email)->lower()->trim()->toString(),
+            Str::of($this->candidate['student_email'])->lower()->trim()->toString(),
+        )) {
+            $this->addError('candidate.student_email', 'Enter the email address used when this exam was started.');
+
+            return;
+        }
+
+        $this->attempt = $this->resumableAttempt;
+        $this->resumableAttempt = null;
+        $this->rememberAttempt();
+        $this->restoreAttemptState();
+        $this->dispatch('exam-attempt-started', attemptId: $this->attempt->id);
+    }
+
+    public function startNewAttempt(): void
+    {
+        $this->resumableAttempt = null;
+        $this->resetErrorBag('candidate.student_email');
     }
 
     public function updatedResponses(mixed $value, ?string $key, SaveExamAnswerAction $saveExamAnswer): void
@@ -224,7 +270,7 @@ class TakeExam extends Component
             return $this->questions;
         }
 
-        return collect([$this->questions[$this->currentQuestionIndex]])->filter();
+        return collect([$this->questions->get($this->currentQuestionIndex)])->filter();
     }
 
     public function getTimeRemainingProperty(): ?int
@@ -271,7 +317,12 @@ class TakeExam extends Component
 
         if ($question->isMultipleChoice()) {
             $selectedOptionIds = $question->allows_multiple_selection
-                ? array_values(array_filter($response['selected_option_ids'] ?? []))
+                ? collect($response['selected_options'] ?? [])
+                    ->filter(fn (mixed $isSelected): bool => filter_var($isSelected, FILTER_VALIDATE_BOOL))
+                    ->keys()
+                    ->map(fn (mixed $optionId): string => (string) $optionId)
+                    ->values()
+                    ->all()
                 : array_values(array_filter([(string) ($response['selected_option_id'] ?? '')]));
 
             return [
@@ -319,8 +370,8 @@ class TakeExam extends Component
 
         if ($question->isMultipleChoice()) {
             if ($question->allows_multiple_selection) {
-                return collect($response['selected_option_ids'] ?? [])
-                    ->filter(fn (mixed $value): bool => filled($value))
+                return collect($response['selected_options'] ?? [])
+                    ->filter(fn (mixed $isSelected): bool => filter_var($isSelected, FILTER_VALIDATE_BOOL))
                     ->isNotEmpty();
             }
 
@@ -335,6 +386,19 @@ class TakeExam extends Component
         return Str::of($answer)
             ->squish()
             ->toString();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function studentEmailRules(): array
+    {
+        return [
+            'required',
+            'email:rfc',
+            'max:255',
+            'regex:/^[^@\\s]+@(?:[a-z0-9-]+\\.)+[a-z]{2,}$/i',
+        ];
     }
 
     private function ensureExamIsAvailable(): bool
@@ -388,7 +452,7 @@ class TakeExam extends Component
 
                     return [
                         $answer->question_id => $question->allows_multiple_selection
-                            ? ['selected_option_ids' => $selectedOptionIds]
+                            ? ['selected_options' => array_fill_keys($selectedOptionIds, true)]
                             : ['selected_option_id' => $selectedOptionIds[0] ?? ''],
                     ];
                 }

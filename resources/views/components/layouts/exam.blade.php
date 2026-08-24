@@ -10,5 +10,25 @@
 <body class="min-h-screen bg-[radial-gradient(circle_at_top,_#fef3c7,_#fff7ed_35%,_#f8fafc_70%)] text-slate-900">
     {{ $slot }}
     @livewireScripts
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('exam-attempt-started', ({ attemptId }) => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('attempt', attemptId);
+                window.history.replaceState({}, '', url);
+            });
+
+            Livewire.interceptRequest(({ onError }) => {
+                onError(({ response, preventDefault }) => {
+                    if (response.status !== 419) {
+                        return;
+                    }
+
+                    preventDefault();
+                    window.location.reload();
+                });
+            });
+        });
+    </script>
 </body>
 </html>

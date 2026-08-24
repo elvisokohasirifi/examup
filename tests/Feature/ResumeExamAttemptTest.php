@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Exams\ResumeExamAttemptAction;
 use App\Actions\Exams\SaveExamAnswerAction;
 use App\Actions\Exams\StartExamAttemptAction;
 use App\Livewire\TakeExam;
@@ -38,6 +39,7 @@ test('a student resumes a shareable-link attempt from the same browser session',
     $link = ExamAccessLink::factory()->create([
         'exam_id' => $exam->id,
         'created_by' => $examiner->id,
+        'email' => null,
         'max_attempts' => 0,
     ]);
 
@@ -57,6 +59,9 @@ test('a student resumes a shareable-link attempt from the same browser session',
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])
+        ->assertSet('resumableAttempt.id', $attemptId)
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('resumeAttempt')
         ->assertSet('attempt.id', $attemptId)
         ->assertSet('currentQuestionIndex', 1)
         ->assertSet("responses.{$firstQuestion->id}.selected_option_id", $option->id)
@@ -86,4 +91,22 @@ test('an individual email link resumes its active attempt without a browser sess
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])->assertSet('attempt.id', $attempt->id);
+});
+
+test('an attempt in the recovery URL can resume after a session reset', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create(['created_by' => $examiner->id]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+    $attempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $link->id,
+        'status' => ExamAttempt::STATUS_IN_PROGRESS,
+    ]);
+
+    $resumedAttempt = app(ResumeExamAttemptAction::class)->fromRecoveryUrl($link, $attempt->id);
+
+    expect($resumedAttempt?->id)->toBe($attempt->id);
 });

@@ -9,6 +9,16 @@ class ResumeExamAttemptAction
 {
     public function fromSession(ExamAccessLink $accessLink, ?string $attemptId): ?ExamAttempt
     {
+        return $this->forAccessLink($accessLink, $attemptId);
+    }
+
+    public function fromRecoveryUrl(ExamAccessLink $accessLink, ?string $attemptId): ?ExamAttempt
+    {
+        return $this->forAccessLink($accessLink, $attemptId);
+    }
+
+    private function forAccessLink(ExamAccessLink $accessLink, ?string $attemptId): ?ExamAttempt
+    {
         if (blank($attemptId)) {
             return null;
         }
