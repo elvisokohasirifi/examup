@@ -128,8 +128,24 @@ class StoreExamRequest extends FormRequest
             ->values()
             ->all();
 
+        $booleanFields = [
+            'allow_back_navigation' => true,
+            'shuffle_questions' => false,
+            'show_score_to_student' => false,
+            'show_correct_answers_to_student' => false,
+            'show_index_number_field' => false,
+            'disable_copy_paste' => false,
+            'is_published' => false,
+        ];
+
+        $normalizedBooleanFields = collect($booleanFields)
+            ->mapWithKeys(fn (bool $default, string $field): array => [
+                $field => filter_var($this->input($field, $default), FILTER_VALIDATE_BOOL),
+            ])
+            ->all();
+
         $this->merge([
-            'allow_back_navigation' => filter_var($this->input('allow_back_navigation', true), FILTER_VALIDATE_BOOL),
+            ...$normalizedBooleanFields,
             'questions' => $normalizedQuestions,
         ]);
     }

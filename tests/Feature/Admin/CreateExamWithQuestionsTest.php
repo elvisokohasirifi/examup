@@ -20,10 +20,11 @@ test('admin can create an exam with nested questions and options from the exam f
             'time_limit_minutes' => 60,
             'autosave_interval_seconds' => 15,
             'expires_at' => now()->addWeek()->toDateTimeString(),
-            'show_score_to_student' => 1,
-            'show_correct_answers_to_student' => 0,
-            'disable_copy_paste' => 1,
-            'is_published' => 1,
+            'show_score_to_student' => 'on',
+            'show_correct_answers_to_student' => 'on',
+            'show_index_number_field' => 'on',
+            'disable_copy_paste' => 'on',
+            'is_published' => 'on',
             'questions' => [
                 [
                     'type' => 'multiple_choice',
@@ -56,6 +57,11 @@ test('admin can create an exam with nested questions and options from the exam f
         'created_by' => $admin->id,
         'allow_back_navigation' => 1,
         'shuffle_questions' => 1,
+        'show_score_to_student' => 1,
+        'show_correct_answers_to_student' => 1,
+        'show_index_number_field' => 1,
+        'disable_copy_paste' => 1,
+        'is_published' => 1,
     ]);
 
     $this->assertDatabaseHas('questions', [
