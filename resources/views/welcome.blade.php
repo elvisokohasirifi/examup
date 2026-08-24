@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'ExamUp') }} | Online Exam Platform</title>
-        <meta
-            name="description"
-            content="ExamUp is a production-ready online exam system for schools, academies, and certification teams with Backpack-powered administration and a polished Livewire exam experience."
-        >
+        <title>{{ config('app.name', 'ExamUp') }} | Modern online exams</title>
+        <meta name="description" content="Create, deliver, and review secure online exams with ExamUp.">
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -17,207 +14,123 @@
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-full bg-slate-950 text-slate-100 antialiased">
-        <div class="relative overflow-hidden">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(249,115,22,0.18),transparent_26%),linear-gradient(180deg,#020617_0%,#0f172a_45%,#111827_100%)]"></div>
-            <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+    <body class="min-h-screen overflow-x-hidden bg-[#fffaf3] font-sans text-[#1d2a3a] antialiased">
+        <div class="relative isolate overflow-hidden">
+            <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(circle_at_12%_18%,rgba(255,206,125,0.72),transparent_22%),radial-gradient(circle_at_82%_7%,rgba(112,218,207,0.55),transparent_24%),linear-gradient(145deg,#fffaf3_8%,#f5f6ff_56%,#f5fffd_100%)]"></div>
+            <div class="pointer-events-none absolute left-[-8rem] top-[34rem] -z-10 h-72 w-72 rounded-full bg-[#f7a58d]/25 blur-3xl"></div>
+            <div class="pointer-events-none absolute right-[-8rem] top-[44rem] -z-10 h-80 w-80 rounded-full bg-[#9d8df2]/20 blur-3xl"></div>
 
-            <div class="relative mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-10">
-                <header class="flex items-center justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.28em] text-sky-300">ExamUp</p>
-                        <p class="mt-2 max-w-xl text-sm text-slate-300">
-                            Secure online exams for teams that need structure, speed, and reliable grading.
-                        </p>
-                    </div>
+            <div class="mx-auto max-w-7xl px-5 py-5 sm:px-8 lg:px-10">
+                <header class="flex items-center justify-between rounded-full border border-[#1d2a3a]/8 bg-white/70 px-4 py-3 shadow-[0_8px_28px_rgba(46,58,78,0.06)] backdrop-blur sm:px-6">
+                    <a href="{{ route('home') }}" class="flex items-center gap-3" aria-label="{{ config('app.name', 'ExamUp') }} home">
+                        <span class="grid size-10 place-items-center rounded-2xl bg-[#243b53] text-lg font-black text-[#ffd166] shadow-lg shadow-[#243b53]/15">E</span>
+                        <span class="font-serif text-xl font-bold tracking-tight text-[#243b53]">ExamUp</span>
+                    </a>
 
-                    <a
-                        href="{{ backpack_url('login') }}"
-                        class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-sky-300/60 hover:bg-sky-400/15 hover:text-sky-100"
-                    >
-                        Admin Login
+                    <a href="{{ backpack_url('login') }}" class="inline-flex items-center gap-2 rounded-full bg-[#243b53] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#243b53]/15 transition duration-200 hover:-translate-y-0.5 hover:bg-[#35516e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f26d5b] focus-visible:ring-offset-2">
+                        Admin login <span aria-hidden="true">&rarr;</span>
                     </a>
                 </header>
 
-                <main class="flex-1 py-14 lg:py-20">
-                    <section class="grid items-center gap-12 lg:grid-cols-[1.2fr_0.8fr]">
-                        <div>
-                            <div class="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200">
-                                Built for administrators, examiners, and real exam sessions
+                <main>
+                    <section class="grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[0.92fr_1.08fr] lg:py-24">
+                        <div class="max-w-2xl">
+                            <div class="inline-flex items-center gap-2 rounded-full border border-[#efb949]/30 bg-[#fff3d7] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#8a5a00]">
+                                <span class="size-2 rounded-full bg-[#f26d5b]"></span>
+                                Assess with confidence
                             </div>
 
-                            <h1 class="mt-8 max-w-4xl font-serif text-5xl leading-tight text-white sm:text-6xl lg:text-7xl">
-                                Run beautiful, secure online exams without juggling multiple tools.
+                            <h1 class="mt-6 font-serif text-5xl font-bold leading-[0.95] tracking-[-0.055em] text-[#243b53] sm:text-6xl lg:text-7xl">
+                                Exams that feel
+                                <span class="whitespace-nowrap text-[#f26d5b]">effortless.</span>
                             </h1>
 
-                            <p class="mt-6 max-w-3xl text-lg leading-8 text-slate-300 sm:text-xl">
-                                {{ config('app.name', 'ExamUp') }} combines Backpack for administration and examiner workflows with a Livewire-powered student exam interface, so teams can create exams, deliver them securely, grade automatically, and review performance in one place.
-                            </p>
+                            <p class="mt-6 max-w-xl text-lg leading-8 text-[#536477] sm:text-xl">Build polished assessments, share them safely, and get the insight to make every result count.</p>
 
-                            <div class="mt-10 flex flex-wrap gap-4">
-                                <a
-                                    href="{{ backpack_url('login') }}"
-                                    class="inline-flex items-center rounded-full bg-sky-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition hover:-translate-y-0.5 hover:bg-sky-300"
-                                >
-                                    Go to Admin Panel
-                                </a>
-                                <a
-                                    href="#features"
-                                    class="inline-flex items-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-orange-300/60 hover:bg-white/5"
-                                >
-                                    Explore Features
-                                </a>
+                            <div class="mt-8 flex flex-wrap gap-3">
+                                <a href="{{ backpack_url('login') }}" class="inline-flex items-center justify-center rounded-full bg-[#f26d5b] px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-[#f26d5b]/25 transition duration-200 hover:-translate-y-0.5 hover:bg-[#dd5848] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f26d5b] focus-visible:ring-offset-2">Manage exams</a>
+                                <a href="#features" class="inline-flex items-center justify-center rounded-full border border-[#243b53]/15 bg-white/70 px-6 py-3.5 text-sm font-bold text-[#243b53] transition duration-200 hover:-translate-y-0.5 hover:border-[#243b53]/30 hover:bg-white">See what&apos;s inside</a>
                             </div>
 
-                            <div class="mt-12 grid gap-4 sm:grid-cols-3">
-                                <div class="rounded-3xl border border-white/10 bg-white/6 p-5 backdrop-blur">
-                                    <p class="text-3xl font-semibold text-white">2</p>
-                                    <p class="mt-2 text-sm text-slate-300">Question types: multiple choice and fill-in with multiple correct answers.</p>
-                                </div>
-                                <div class="rounded-3xl border border-white/10 bg-white/6 p-5 backdrop-blur">
-                                    <p class="text-3xl font-semibold text-white">Live</p>
-                                    <p class="mt-2 text-sm text-slate-300">Auto-save, timed attempts, controlled score visibility, and exam expiry support.</p>
-                                </div>
-                                <div class="rounded-3xl border border-white/10 bg-white/6 p-5 backdrop-blur">
-                                    <p class="text-3xl font-semibold text-white">CSV</p>
-                                    <p class="mt-2 text-sm text-slate-300">Results export plus per-question analytics for fast examiner review.</p>
-                                </div>
+                            <div class="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#536477]">
+                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> No student accounts</span>
+                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Auto-graded</span>
+                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Ready to share</span>
                             </div>
                         </div>
 
-                        <div class="relative">
-                            <div class="absolute -inset-6 rounded-[2rem] bg-sky-400/10 blur-3xl"></div>
-                            <div class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/50 backdrop-blur">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">Platform Snapshot</p>
-                                        <h2 class="mt-3 text-2xl font-semibold text-white">What the app already handles</h2>
-                                    </div>
-                                    <div class="rounded-full border border-orange-300/30 bg-orange-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-orange-200">
-                                        Production ready
-                                    </div>
-                                </div>
+                        <div class="relative mx-auto w-full max-w-2xl lg:max-w-none">
+                            <div class="absolute -right-3 -top-5 grid size-20 place-items-center rounded-[1.6rem] bg-[#ffd166] text-3xl shadow-xl shadow-[#d89a21]/20 rotate-12 sm:-right-6 sm:-top-8">&#10022;</div>
+                            <div class="absolute -bottom-5 -left-3 size-24 rounded-full border-[10px] border-[#72dacf] bg-[#effdf9] sm:-bottom-8 sm:-left-7"></div>
 
-                                <div class="mt-8 space-y-4">
-                                    <div class="rounded-2xl bg-white/5 p-4">
-                                        <p class="text-sm font-semibold text-white">Back office roles</p>
-                                        <p class="mt-2 text-sm leading-6 text-slate-300">Admins manage users and settings. Examiners create exams, compose nested questions inline, distribute secure links, and review results.</p>
+                            <div class="relative rounded-[2rem] border-[6px] border-white bg-[#243b53] p-4 shadow-[0_28px_60px_rgba(36,59,83,0.25)] sm:p-5">
+                                <div class="rounded-[1.35rem] bg-[#f8fbff] p-4 sm:p-6">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div class="flex items-center gap-3">
+                                            <span class="grid size-10 place-items-center rounded-xl bg-[#eeeaff] text-lg">&#128214;</span>
+                                            <div>
+                                                <p class="text-xs font-bold uppercase tracking-[0.15em] text-[#8a98a9]">Live exam</p>
+                                                <p class="font-serif text-lg font-bold text-[#243b53]">World History</p>
+                                            </div>
+                                        </div>
+                                        <span class="rounded-full bg-[#fff0ed] px-3 py-1.5 text-xs font-bold text-[#d74c3c]">18:42 left</span>
                                     </div>
-                                    <div class="rounded-2xl bg-white/5 p-4">
-                                        <p class="text-sm font-semibold text-white">Student access</p>
-                                        <p class="mt-2 text-sm leading-6 text-slate-300">Students are not user accounts. They enter through secure links, provide name and email, and can optionally be asked for an index number.</p>
-                                    </div>
-                                    <div class="rounded-2xl bg-white/5 p-4">
-                                        <p class="text-sm font-semibold text-white">Exam controls</p>
-                                        <p class="mt-2 text-sm leading-6 text-slate-300">Show-all or one-at-a-time delivery, question shuffling, timing controls, auto-grading, auto-save, and examiner-defined result visibility.</p>
-                                    </div>
-                                    <div class="rounded-2xl bg-gradient-to-r from-sky-400/12 to-orange-400/12 p-4 ring-1 ring-white/10">
-                                        <p class="text-sm font-semibold text-white">Access and security</p>
-                                        <p class="mt-2 text-sm leading-6 text-slate-300">Shareable exam links, per-email invite links with prefixed email, suspicious activity logging, and anti-copy / anti-paste deterrents.</p>
+
+                                    <div class="mt-6 h-2 overflow-hidden rounded-full bg-[#e2e8ef]"><div class="h-full w-[62%] rounded-full bg-gradient-to-r from-[#72dacf] to-[#3db7aa]"></div></div>
+
+                                    <div class="mt-6 rounded-2xl border border-[#dfe8ef] bg-white p-5 shadow-sm">
+                                        <div class="flex items-center justify-between gap-4 text-xs font-bold uppercase tracking-[0.12em] text-[#8492a3]"><span>Question 6 of 10</span><span class="text-[#1e9c89]">Saved</span></div>
+                                        <p class="mt-4 font-serif text-xl font-bold leading-snug text-[#243b53]">Which event marked the beginning of the Renaissance?</p>
+
+                                        <div class="mt-5 grid gap-3">
+                                            <div class="flex items-center gap-3 rounded-xl border border-[#dfe8ef] px-4 py-3 text-sm font-semibold text-[#536477]"><span class="grid size-5 place-items-center rounded-full border border-[#aebcca]"></span>The fall of Rome</div>
+                                            <div class="flex items-center gap-3 rounded-xl border-2 border-[#72dacf] bg-[#effdf9] px-4 py-3 text-sm font-bold text-[#243b53]"><span class="grid size-5 place-items-center rounded-full bg-[#1e9c89] text-[10px] text-white">&#10003;</span>A revival of learning and art</div>
+                                            <div class="flex items-center gap-3 rounded-xl border border-[#dfe8ef] px-4 py-3 text-sm font-semibold text-[#536477]"><span class="grid size-5 place-items-center rounded-full border border-[#aebcca]"></span>The Industrial Revolution</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <section id="features" class="mt-24">
-                        <div class="max-w-3xl">
-                            <p class="text-sm font-semibold uppercase tracking-[0.28em] text-orange-300">Feature Overview</p>
-                            <h2 class="mt-4 text-3xl font-semibold text-white sm:text-4xl">Everything needed to create, deliver, and review online assessments</h2>
-                            <p class="mt-4 text-lg leading-8 text-slate-300">
-                                The platform is designed around the exact workflow your app already supports, from exam drafting to secure delivery and analytics after submission.
-                            </p>
+                    <section id="features" class="pb-20 sm:pb-28">
+                        <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                            <div>
+                                <p class="text-sm font-bold uppercase tracking-[0.18em] text-[#f26d5b]">The full exam flow</p>
+                                <h2 class="mt-2 font-serif text-4xl font-bold tracking-[-0.04em] text-[#243b53] sm:text-5xl">Create. Deliver. Learn.</h2>
+                            </div>
+                            <p class="max-w-md text-base leading-7 text-[#657487]">Everything important, in one friendly workspace.</p>
                         </div>
 
-                        <div class="mt-10 grid gap-6 lg:grid-cols-3">
-                            <article class="rounded-[1.75rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">Authoring</p>
-                                <h3 class="mt-4 text-xl font-semibold text-white">Exams built around questions</h3>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">
-                                    Multi-step exam creation, inline question cards, repeatable answer options, descriptions, points, optional help text, and flexible scoring controls.
-                                </p>
+                        <div class="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <article class="rounded-[1.7rem] bg-[#243b53] p-6 text-white shadow-xl shadow-[#243b53]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/12 text-2xl">&#9998;</span><h3 class="mt-8 font-serif text-2xl font-bold">Create</h3><p class="mt-2 text-sm leading-6 text-[#d5e2ec]">Question cards, points, choices, and TXT imports.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#ffd166] p-6 text-[#243b53] shadow-xl shadow-[#d89a21]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#128279;</span><h3 class="mt-8 font-serif text-2xl font-bold">Invite</h3><p class="mt-2 text-sm leading-6 text-[#654b16]">Share one link or send personal email access.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#72dacf] p-6 text-[#173e44] shadow-xl shadow-[#1e9c89]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#9201;</span><h3 class="mt-8 font-serif text-2xl font-bold">Deliver</h3><p class="mt-2 text-sm leading-6 text-[#28555a]">Timed sessions, auto-save, shuffle, and controls.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#eeeaff] p-6 text-[#3f356c] shadow-xl shadow-[#9d8df2]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/60 text-2xl">&#128200;</span><h3 class="mt-8 font-serif text-2xl font-bold">Understand</h3><p class="mt-2 text-sm leading-6 text-[#615889]">Scores, answers, trends, and CSV exports.</p></article>
+                        </div>
+
+                        <div class="mt-5 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+                            <article class="overflow-hidden rounded-[1.8rem] bg-white p-6 shadow-[0_16px_45px_rgba(51,75,95,0.08)] sm:p-8">
+                                <div class="flex items-center justify-between gap-4"><div><p class="text-sm font-bold uppercase tracking-[0.16em] text-[#8a98a9]">At a glance</p><h3 class="mt-1 font-serif text-3xl font-bold text-[#243b53]">Results that speak clearly.</h3></div><span class="rounded-2xl bg-[#fff0ed] px-3 py-2 text-xs font-bold text-[#d74c3c]">Auto-graded</span></div>
+                                <div class="mt-8 grid grid-cols-3 gap-3">
+                                    <div class="rounded-2xl bg-[#f4f8fb] p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8492a3]">Average</p><p class="mt-2 font-serif text-3xl font-bold text-[#243b53]">82%</p></div>
+                                    <div class="rounded-2xl bg-[#effdf9] p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#54968d]">Best</p><p class="mt-2 font-serif text-3xl font-bold text-[#1e9c89]">100%</p></div>
+                                    <div class="rounded-2xl bg-[#fff8df] p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#a17c20]">Time</p><p class="mt-2 font-serif text-3xl font-bold text-[#9a7210]">24m</p></div>
+                                </div>
                             </article>
 
-                            <article class="rounded-[1.75rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">Delivery</p>
-                                <h3 class="mt-4 text-xl font-semibold text-white">Exam sessions that feel controlled</h3>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">
-                                    Timed attempts, show-all or step-by-step navigation, optional question shuffle, expiry date and time, preview links, and smooth Livewire-driven progress.
-                                </p>
-                            </article>
-
-                            <article class="rounded-[1.75rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">Insights</p>
-                                <h3 class="mt-4 text-xl font-semibold text-white">Results examiners can act on</h3>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">
-                                    Per-student scores, CSV download, averages, highest and lowest scores, completion-time metrics, and answer-distribution statistics for each question.
-                                </p>
-                            </article>
+                            <article class="rounded-[1.8rem] bg-[#f26d5b] p-6 text-white shadow-xl shadow-[#f26d5b]/15 sm:p-8"><span class="grid size-12 place-items-center rounded-2xl bg-white/15 text-2xl">&#128274;</span><h3 class="mt-7 font-serif text-3xl font-bold">Secure by design.</h3><p class="mt-3 max-w-sm text-sm leading-6 text-[#fff0ed]">Expiry rules, suspicious activity logs, copy-paste deterrents, and private invite links.</p></article>
                         </div>
                     </section>
 
-                    <section class="mt-24 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                        <div class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
-                            <p class="text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">Why Teams Use It</p>
-                            <h2 class="mt-4 text-3xl font-semibold text-white">One platform for the full exam lifecycle</h2>
-                            <ul class="mt-8 space-y-4 text-sm leading-7 text-slate-300">
-                                <li>Backpack is reserved for admins and examiners, keeping the student experience clean and focused.</li>
-                                <li>Students never need admin accounts to sit for exams.</li>
-                                <li>Exam access can be tightly controlled through shared links or individual email invitations.</li>
-                                <li>Examiners decide when students can see scores and whether correct answers are revealed.</li>
-                                <li>Logs and deterrents help surface suspicious exam behavior without making the interface heavy.</li>
-                            </ul>
-                        </div>
-
-                        <div class="grid gap-6 sm:grid-cols-2">
-                            <div class="rounded-[2rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold text-white">Student Intake</p>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">Name and email are captured at exam start, with an optional index number field that admins or examiners can enable per exam.</p>
-                            </div>
-                            <div class="rounded-[2rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold text-white">Auto Grading</p>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">Objective question types can be graded automatically, reducing turnaround time immediately after submission.</p>
-                            </div>
-                            <div class="rounded-[2rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold text-white">Exam Previews</p>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">Preview exam links are available from the exam listing so teams can validate structure before sharing access with students.</p>
-                            </div>
-                            <div class="rounded-[2rem] border border-white/10 bg-white/6 p-7 backdrop-blur">
-                                <p class="text-sm font-semibold text-white">Operational Simplicity</p>
-                                <p class="mt-3 text-sm leading-7 text-slate-300">A first user can be promoted as admin, then admins can add examiner accounts and manage the system from one secure panel.</p>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="mt-24">
-                        <div class="overflow-hidden rounded-[2.25rem] border border-white/10 bg-gradient-to-r from-sky-400/14 via-cyan-300/10 to-orange-400/14 p-8 sm:p-10">
-                            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="max-w-3xl">
-                                    <p class="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">Ready To Manage Exams?</p>
-                                    <h2 class="mt-4 text-3xl font-semibold text-white sm:text-4xl">Enter the admin and examiner workspace.</h2>
-                                    <p class="mt-4 text-base leading-8 text-slate-200">
-                                        Use the Backpack panel to create exams, configure access, invite candidates, preview delivery, and review performance after the exam closes.
-                                    </p>
-                                </div>
-
-                                <div class="flex shrink-0 flex-wrap gap-4">
-                                    <a
-                                        href="{{ backpack_url('login') }}"
-                                        class="inline-flex items-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-sky-100"
-                                    >
-                                        Admin Login
-                                    </a>
-                                    <a
-                                        href="#features"
-                                        class="inline-flex items-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
-                                    >
-                                        Review Features
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                    <section class="mb-12 overflow-hidden rounded-[2rem] bg-[#243b53] px-6 py-10 text-center text-white shadow-2xl shadow-[#243b53]/20 sm:mb-16 sm:px-10">
+                        <p class="text-sm font-bold uppercase tracking-[0.2em] text-[#ffd166]">Your exam workspace</p>
+                        <h2 class="mx-auto mt-3 max-w-2xl font-serif text-4xl font-bold tracking-[-0.04em] sm:text-5xl">Ready when you are.</h2>
+                        <a href="{{ backpack_url('login') }}" class="mt-7 inline-flex items-center gap-2 rounded-full bg-[#ffd166] px-6 py-3.5 text-sm font-bold text-[#243b53] transition duration-200 hover:-translate-y-0.5 hover:bg-[#ffe09a] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#243b53]">Admin login <span aria-hidden="true">&rarr;</span></a>
                     </section>
                 </main>
+
+                <footer class="pb-8 text-center text-sm font-medium text-[#7b8997]">{{ config('app.name', 'ExamUp') }} &middot; Online assessment, made clearer.</footer>
             </div>
         </div>
     </body>
