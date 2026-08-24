@@ -17,6 +17,9 @@ test('exam create page shows the question builder controls', function () {
         ->assertSee('Continue to questions')
         ->assertSee('Import questions from a text file')
         ->assertSee('Download sample file')
+        ->assertSee('Questions are loaded into the builder immediately')
+        ->assertSee('data-question-import-input', false)
+        ->assertSee('data-question-import-feedback', false)
         ->assertSee('Add another question')
         ->assertSee('Accepted answers (one per line)');
 });

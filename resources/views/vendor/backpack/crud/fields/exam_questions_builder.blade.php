@@ -215,6 +215,8 @@
 
         const questionRows = container.querySelector('[data-question-rows]');
         const addQuestionButtons = container.querySelectorAll('[data-add-question-row]');
+        const importInput = document.querySelector('[data-question-import-input]');
+        const importFeedback = document.querySelector('[data-question-import-feedback]');
         const multipleChoiceType = @js(Question::TYPE_MULTIPLE_CHOICE);
         const fillInType = @js(Question::TYPE_FILL_IN);
 
@@ -334,6 +336,180 @@
             newRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
+        const parseBoolean = (value, questionNumber) => {
+            const normalizedValue = String(value ?? 'false').trim().toLowerCase();
+
+            if (['true', '1', 'yes'].includes(normalizedValue)) {
+                return true;
+            }
+
+            if (['false', '0', 'no'].includes(normalizedValue)) {
+                return false;
+            }
+
+            throw new Error(`Question ${questionNumber} has an invalid MULTIPLE_CORRECT value.`);
+        };
+
+        const parseImportedQuestions = (contents) => {
+            if (!contents.trim()) {
+                throw new Error('The question import file is empty.');
+            }
+
+            const questionBlocks = contents
+                .trim()
+                .split(/^\s*---\s*$/m)
+                .map((block) => block.trim())
+                .filter(Boolean);
+
+            if (!questionBlocks.length) {
+                throw new Error('The question import file does not contain any question blocks.');
+            }
+
+            return questionBlocks.map((block, index) => {
+                const questionNumber = index + 1;
+                const fields = { options: [], correct: [] };
+                let activeList = null;
+
+                block.split(/\r\n|\r|\n/).forEach((rawLine) => {
+                    const line = rawLine.trim();
+
+                    if (!line) {
+                        return;
+                    }
+
+                    const listMatch = line.match(/^(OPTIONS|CORRECT):\s*$/i);
+                    if (listMatch) {
+                        activeList = listMatch[1].toLowerCase();
+
+                        return;
+                    }
+
+                    if (activeList && line.startsWith('-')) {
+                        const value = line.slice(1).trim();
+
+                        if (!value) {
+                            throw new Error(`Question ${questionNumber} contains an empty ${activeList} entry.`);
+                        }
+
+                        fields[activeList].push(value);
+
+                        return;
+                    }
+
+                    const fieldMatch = line.match(/^(TYPE|POINTS|MULTIPLE_CORRECT|PROMPT|HELP):\s*(.+)$/i);
+                    if (fieldMatch) {
+                        fields[fieldMatch[1].toLowerCase()] = fieldMatch[2].trim();
+                        activeList = null;
+
+                        return;
+                    }
+
+                    throw new Error(`Question ${questionNumber} has an unrecognized line: ${line}`);
+                });
+
+                if (![multipleChoiceType, fillInType].includes(fields.type)) {
+                    throw new Error(`Question ${questionNumber} must declare TYPE as multiple_choice or fill_in.`);
+                }
+
+                if (!fields.prompt) {
+                    throw new Error(`Question ${questionNumber} must include a PROMPT.`);
+                }
+
+                if (!Number.isFinite(Number(fields.points)) || Number(fields.points) < 0.25) {
+                    throw new Error(`Question ${questionNumber} must include POINTS of at least 0.25.`);
+                }
+
+                const allowsMultipleSelection = parseBoolean(fields.multiple_correct, questionNumber);
+
+                if (fields.type === fillInType) {
+                    if (!fields.correct.length) {
+                        throw new Error(`Question ${questionNumber} needs at least one CORRECT answer.`);
+                    }
+
+                    return {
+                        type: fields.type,
+                        prompt: fields.prompt,
+                        helpText: fields.help ?? '',
+                        points: fields.points,
+                        allowsMultipleSelection: false,
+                        acceptedAnswers: fields.correct,
+                        options: [],
+                    };
+                }
+
+                if (!fields.options.length) {
+                    throw new Error(`Question ${questionNumber} needs at least one OPTIONS entry.`);
+                }
+
+                if (!fields.correct.length) {
+                    throw new Error(`Question ${questionNumber} needs at least one CORRECT entry.`);
+                }
+
+                if (fields.correct.some((answer) => !fields.options.includes(answer))) {
+                    throw new Error(`Question ${questionNumber} has a CORRECT answer that is not listed in OPTIONS.`);
+                }
+
+                return {
+                    type: fields.type,
+                    prompt: fields.prompt,
+                    helpText: fields.help ?? '',
+                    points: fields.points,
+                    allowsMultipleSelection,
+                    acceptedAnswers: [],
+                    options: fields.options.map((label) => ({
+                        label,
+                        isCorrect: fields.correct.includes(label),
+                    })),
+                };
+            });
+        };
+
+        const populateImportedQuestions = (questions) => {
+            questionRows.innerHTML = '';
+
+            questions.forEach((question, questionIndex) => {
+                questionRows.insertAdjacentHTML('beforeend', questionRowTemplate(questionIndex));
+
+                const row = questionRows.querySelectorAll('[data-question-row]')[questionIndex];
+                const questionType = row.querySelector('[data-question-type]');
+                const points = row.querySelector('input[type="number"]');
+                const textareas = row.querySelectorAll('textarea');
+                const multipleSelection = row.querySelector('[data-multiple-selection-wrapper] input[type="checkbox"]');
+                const optionsHolder = row.querySelector('[data-option-rows]');
+
+                questionType.value = question.type;
+                points.value = question.points;
+                textareas[0].value = question.prompt;
+                textareas[1].value = question.helpText;
+                textareas[2].value = question.acceptedAnswers.join('\n');
+                multipleSelection.checked = question.allowsMultipleSelection;
+                optionsHolder.innerHTML = '';
+
+                question.options.forEach((option, optionIndex) => {
+                    optionsHolder.insertAdjacentHTML('beforeend', optionRowTemplate(questionIndex, optionIndex));
+
+                    const optionRow = optionsHolder.querySelectorAll('[data-option-row]')[optionIndex];
+                    optionRow.querySelector('input[type="text"]').value = option.label;
+                    optionRow.querySelector('input[type="checkbox"]').checked = option.isCorrect;
+                });
+
+                syncQuestionType(row);
+            });
+
+            renumberQuestions();
+            questionRows.firstElementChild?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const setImportFeedback = (message, isError = false) => {
+            if (!importFeedback) {
+                return;
+            }
+
+            importFeedback.textContent = message;
+            importFeedback.classList.toggle('text-danger', isError);
+            importFeedback.classList.toggle('text-success', !isError && message !== '');
+        };
+
         addQuestionButtons.forEach((button) => {
             button.addEventListener('click', addQuestion);
         });
@@ -402,5 +578,34 @@
         });
 
         renumberQuestions();
+
+        importInput?.addEventListener('change', async () => {
+            const file = importInput.files?.[0];
+
+            if (!file) {
+                setImportFeedback('');
+
+                return;
+            }
+
+            if (file.size > 1024 * 1024) {
+                importInput.value = '';
+                setImportFeedback('The question import file must not be larger than 1 MB.', true);
+
+                return;
+            }
+
+            try {
+                const questions = parseImportedQuestions(await file.text());
+
+                populateImportedQuestions(questions);
+                importInput.classList.remove('is-invalid');
+                setImportFeedback(`${questions.length} question${questions.length === 1 ? '' : 's'} loaded. Review or edit them below, then save the exam.`);
+            } catch (error) {
+                importInput.value = '';
+                importInput.classList.add('is-invalid');
+                setImportFeedback(error instanceof Error ? error.message : 'Unable to read this question import file.', true);
+            }
+        });
     })();
 </script>
