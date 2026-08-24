@@ -442,5 +442,23 @@
         "asset_path": "https://www.gravatar.com/avatar/bba8d625cef974feae69c2c20f0fe2855edf7294609fa342bba33d2d9c17be35.jpg?s=80&d=blank&r=g",
         "asset_disk_path": "basset/www.gravatar.com/avatar/bba8d625cef974feae69c2c20f0fe2855edf7294609fa342bba33d2d9c17be35.jpg",
         "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/32100539a223a82405c1980b2d1f2eaf6c34ddb46dcfe79aada912f73f4ca6bd.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/32100539a223a82405c1980b2d1f2eaf6c34ddb46dcfe79aada912f73f4ca6bd.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/32100539a223a82405c1980b2d1f2eaf6c34ddb46dcfe79aada912f73f4ca6bd.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/32100539a223a82405c1980b2d1f2eaf6c34ddb46dcfe79aada912f73f4ca6bd.jpg",
+        "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/e7d483111e5e3173daf5a5d65afdb6984f348c14cc52b971d31531aa76164c07.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/e7d483111e5e3173daf5a5d65afdb6984f348c14cc52b971d31531aa76164c07.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/e7d483111e5e3173daf5a5d65afdb6984f348c14cc52b971d31531aa76164c07.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/e7d483111e5e3173daf5a5d65afdb6984f348c14cc52b971d31531aa76164c07.jpg",
+        "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/1c668d79fe547b06c06ca43bc5d9d5102b0587c43c926817ea00b027cf4626fa.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/1c668d79fe547b06c06ca43bc5d9d5102b0587c43c926817ea00b027cf4626fa.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/1c668d79fe547b06c06ca43bc5d9d5102b0587c43c926817ea00b027cf4626fa.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/1c668d79fe547b06c06ca43bc5d9d5102b0587c43c926817ea00b027cf4626fa.jpg",
+        "asset_attributes": []
     }
 }

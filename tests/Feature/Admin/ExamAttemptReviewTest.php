@@ -76,6 +76,8 @@ test('an exam owner can review a completed students answers, grading, and activi
         ->assertSee('Oxygen')
         ->assertSee('Student selected')
         ->assertSee('Correct answer')
+        ->assertSee('2 / 2 points')
+        ->assertDontSee('2.00 / 2 points')
         ->assertSee('Suspicious events')
         ->assertSee('window blur')
         ->assertSee('The exam tab lost focus.');

@@ -8,6 +8,7 @@ use Database\Factories\ExamAnswerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Number;
 
 class ExamAnswer extends Model
 {
@@ -47,5 +48,16 @@ class ExamAnswer extends Model
     public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
+    }
+
+    public function formattedScore(): string
+    {
+        $score = round((float) $this->score, 1);
+
+        if ((float) ((int) $score) === $score) {
+            return (string) ((int) $score);
+        }
+
+        return Number::format($score, precision: 1);
     }
 }

@@ -137,7 +137,7 @@
                 <p class="mb-0">
                     @if ($answer)
                         <span class="badge bg-{{ $answer->is_correct ? 'success' : 'danger' }}">{{ $answer->is_correct ? 'Correct' : 'Incorrect' }}</span>
-                        <span class="ms-2">{{ $answer->score }} / {{ $question->formattedPoints() }} points</span>
+                        <span class="ms-2">{{ $answer->formattedScore() }} / {{ $question->formattedPoints() }} points</span>
                     @else
                         <span class="badge bg-secondary">Not answered</span>
                     @endif
