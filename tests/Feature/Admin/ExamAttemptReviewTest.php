@@ -32,6 +32,12 @@ test('an exam owner can review a completed students answers, grading, and activi
         'value' => 'Carbon dioxide',
         'is_correct' => true,
     ]);
+    QuestionOption::factory()->create([
+        'question_id' => $question->id,
+        'label' => 'Oxygen',
+        'value' => 'Oxygen',
+        'is_correct' => false,
+    ]);
     $attempt = ExamAttempt::factory()->create([
         'exam_id' => $exam->id,
         'exam_access_link_id' => $accessLink->id,
@@ -65,7 +71,11 @@ test('an exam owner can review a completed students answers, grading, and activi
         ->assertOk()
         ->assertSee("Amina Mensah's completed exam", false)
         ->assertSee('Which gas do plants absorb?')
+        ->assertSee('Answer choices')
         ->assertSee('Carbon dioxide')
+        ->assertSee('Oxygen')
+        ->assertSee('Student selected')
+        ->assertSee('Correct answer')
         ->assertSee('Suspicious events')
         ->assertSee('window blur')
         ->assertSee('The exam tab lost focus.');

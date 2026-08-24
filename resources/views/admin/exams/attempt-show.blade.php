@@ -83,34 +83,65 @@
                 <p class="text-muted">{{ $question->help_text }}</p>
             @endif
 
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <h6>Student answer</h6>
-                    @if ($question->isMultipleChoice())
-                        <p class="mb-0">{{ $selectedOptions->pluck('label')->implode(', ') ?: 'No answer' }}</p>
-                    @else
+            @if ($question->isMultipleChoice())
+                <div>
+                    <h6 class="mb-3">Answer choices</h6>
+                    <div class="list-group">
+                        @foreach ($question->options as $option)
+                            @php
+                                $isSelected = $selectedOptionIds->contains((string) $option->id);
+                                $isCorrect = $option->is_correct;
+                            @endphp
+                            <div @class([
+                                'list-group-item d-flex align-items-center justify-content-between gap-3',
+                                'border-success' => $isCorrect,
+                                'border-danger' => $isSelected && ! $isCorrect,
+                            ])>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input
+                                        class="form-check-input m-0"
+                                        type="{{ $question->allows_multiple_selection ? 'checkbox' : 'radio' }}"
+                                        @checked($isSelected)
+                                        disabled
+                                        aria-label="{{ $option->label }}"
+                                    >
+                                    <span @class(['fw-semibold' => $isSelected || $isCorrect])>{{ $option->label }}</span>
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-end gap-2">
+                                    @if ($isSelected)
+                                        <span class="badge bg-{{ $isCorrect ? 'success' : 'danger' }}">Student selected</span>
+                                    @endif
+                                    @if ($isCorrect)
+                                        <span class="badge bg-success">Correct answer</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Student answer</h6>
                         <p class="mb-0">{{ $answer?->answer_text ?: 'No answer' }}</p>
-                    @endif
-                </div>
-                <div class="col-md-4">
-                    <h6>Correct answer</h6>
-                    @if ($question->isMultipleChoice())
-                        <p class="mb-0">{{ $correctOptions->pluck('label')->implode(', ') }}</p>
-                    @else
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Correct answer</h6>
                         <p class="mb-0">{{ collect($question->accepted_answers)->implode(', ') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            <div class="mt-3">
+                <h6>Grading</h6>
+                <p class="mb-0">
+                    @if ($answer)
+                        <span class="badge bg-{{ $answer->is_correct ? 'success' : 'danger' }}">{{ $answer->is_correct ? 'Correct' : 'Incorrect' }}</span>
+                        <span class="ms-2">{{ $answer->score }} / {{ $question->formattedPoints() }} points</span>
+                    @else
+                        <span class="badge bg-secondary">Not answered</span>
                     @endif
-                </div>
-                <div class="col-md-4">
-                    <h6>Grading</h6>
-                    <p class="mb-0">
-                        @if ($answer)
-                            <span class="badge bg-{{ $answer->is_correct ? 'success' : 'danger' }}">{{ $answer->is_correct ? 'Correct' : 'Incorrect' }}</span>
-                            <span class="ms-2">{{ $answer->score }} / {{ $question->formattedPoints() }} points</span>
-                        @else
-                            <span class="badge bg-secondary">Not answered</span>
-                        @endif
-                    </p>
-                </div>
+                </p>
             </div>
         </div>
     </div>
