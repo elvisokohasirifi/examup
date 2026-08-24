@@ -18,7 +18,7 @@ class SubmitExamAttemptAction
                 ->findOrFail($attempt->id);
 
             if ($attempt->isFinished()) {
-                return $attempt->load(['exam', 'answers.question']);
+                return $attempt->load(['exam', 'answers.question.options']);
             }
 
             $attempt->load('exam.questions.options', 'answers');
@@ -60,7 +60,7 @@ class SubmitExamAttemptAction
                 'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
             ]);
 
-            return $attempt->fresh(['exam', 'answers.question']);
+            return $attempt->fresh(['exam', 'answers.question.options']);
         }, 3);
     }
 

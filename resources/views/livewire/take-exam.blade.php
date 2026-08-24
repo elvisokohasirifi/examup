@@ -104,6 +104,15 @@
                                 @foreach ($attempt->answers as $answer)
                                     <div class="rounded-2xl bg-white p-4">
                                         <p class="font-semibold text-slate-900">{{ $answer->question?->prompt }}</p>
+                                        @php
+                                            $studentAnswer = $answer->question?->isMultipleChoice()
+                                                ? $answer->question->options
+                                                    ->whereIn('id', $answer->selected_option_ids ?? [])
+                                                    ->pluck('label')
+                                                    ->implode(', ')
+                                                : $answer->answer_text;
+                                        @endphp
+                                        <p class="mt-2 text-slate-700">Your answer: {{ filled($studentAnswer) ? $studentAnswer : 'No answer submitted' }}</p>
                                         <p class="mt-2">Correct: {{ $answer->is_correct ? 'Yes' : 'No' }}</p>
                                     </div>
                                 @endforeach

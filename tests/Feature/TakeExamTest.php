@@ -23,6 +23,7 @@ test('student can start and submit an exam from a secure link', function () {
         'created_by' => $examiner->id,
         'display_mode' => 'all',
         'show_score_to_student' => true,
+        'show_correct_answers_to_student' => true,
         'show_index_number_field' => true,
     ]);
 
@@ -57,6 +58,7 @@ test('student can start and submit an exam from a secure link', function () {
         ->set("responses.{$question->id}.selected_option_id", $option->id)
         ->call('submitExam', app(SubmitExamAttemptAction::class))
         ->assertSee('Exam submitted')
+        ->assertSee('Your answer: Correct option')
         ->assertSee('1 / 1');
 });
 
