@@ -1,14 +1,51 @@
 @extends(backpack_view('blank'))
 
 @section('content')
+@php
+    $averageCompletionMinutes = round($stats['average_completion_time_seconds'] / 60, 1);
+    $scorePrecision = fn (float $score): int => fmod($score, 1.0) === 0.0 ? 0 : 1;
+@endphp
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
             <div>
                 <h2 class="mb-2">{{ $exam->title }} results</h2>
-                <p class="mb-0">Attempts: {{ $stats['attempt_count'] }} | Average score: {{ \Illuminate\Support\Number::format($stats['average_score'], precision: fmod((float) $stats['average_score'], 1.0) === 0.0 ? 0 : 1) }} | Highest: {{ \Illuminate\Support\Number::format($stats['highest_score'], precision: fmod((float) $stats['highest_score'], 1.0) === 0.0 ? 0 : 1) }} | Lowest: {{ \Illuminate\Support\Number::format($stats['lowest_score'], precision: fmod((float) $stats['lowest_score'], 1.0) === 0.0 ? 0 : 1) }} | Average completion time: {{ $stats['average_completion_time_seconds'] }} seconds</p>
+                <p class="mb-0 text-muted">Performance summary for completed attempts.</p>
             </div>
             <a class="btn btn-outline-primary" href="{{ route('admin.exams.csv', $exam) }}">Download CSV results</a>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl">
+                <div class="card bg-primary text-white h-100"><div class="card-body">
+                    <div class="text-uppercase small opacity-75">Attempts</div>
+                    <div class="fs-2 fw-bold">{{ $stats['attempt_count'] }}</div>
+                </div></div>
+            </div>
+            <div class="col-sm-6 col-xl">
+                <div class="card bg-success text-white h-100"><div class="card-body">
+                    <div class="text-uppercase small opacity-75">Average score</div>
+                    <div class="fs-2 fw-bold">{{ \Illuminate\Support\Number::format($stats['average_score'], precision: $scorePrecision((float) $stats['average_score'])) }}</div>
+                </div></div>
+            </div>
+            <div class="col-sm-6 col-xl">
+                <div class="card bg-info text-white h-100"><div class="card-body">
+                    <div class="text-uppercase small opacity-75">Highest score</div>
+                    <div class="fs-2 fw-bold">{{ \Illuminate\Support\Number::format($stats['highest_score'], precision: $scorePrecision((float) $stats['highest_score'])) }}</div>
+                </div></div>
+            </div>
+            <div class="col-sm-6 col-xl">
+                <div class="card bg-warning text-dark h-100"><div class="card-body">
+                    <div class="text-uppercase small opacity-75">Lowest score</div>
+                    <div class="fs-2 fw-bold">{{ \Illuminate\Support\Number::format($stats['lowest_score'], precision: $scorePrecision((float) $stats['lowest_score'])) }}</div>
+                </div></div>
+            </div>
+            <div class="col-sm-6 col-xl">
+                <div class="card bg-dark text-white h-100"><div class="card-body">
+                    <div class="text-uppercase small opacity-75">Average completion time</div>
+                    <div class="fs-2 fw-bold">{{ \Illuminate\Support\Number::format($averageCompletionMinutes, precision: 1) }} <span class="fs-5 fw-normal">minutes</span></div>
+                </div></div>
+            </div>
         </div>
 
         <div class="card mb-4">

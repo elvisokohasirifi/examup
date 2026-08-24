@@ -93,11 +93,15 @@ test('the results page links completed attempts to their individual review page'
         'exam_id' => $exam->id,
         'exam_access_link_id' => $accessLink->id,
         'status' => ExamAttempt::STATUS_SUBMITTED,
+        'duration_seconds' => 583,
     ]);
 
     $this->actingAs($admin)
         ->get(route('admin.exams.results', $exam))
         ->assertOk()
         ->assertSee('View completed exam')
+        ->assertSee('Average completion time')
+        ->assertSee('9.7')
+        ->assertSee('minutes')
         ->assertSee(route('admin.exams.attempts.show', [$exam, $attempt]));
 });
