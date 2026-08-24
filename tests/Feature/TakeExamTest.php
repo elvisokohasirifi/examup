@@ -205,6 +205,7 @@ test('students cannot go back and must answer each question before proceeding wh
         ->call('nextQuestion', app(SaveExamAnswerAction::class))
         ->assertHasErrors(['currentQuestionResponse'])
         ->set("responses.{$firstQuestion->id}.selected_option_id", $firstOption->id)
+        ->assertSet("responses.{$firstQuestion->id}.selected_option_id", $firstOption->id)
         ->call('nextQuestion', app(SaveExamAnswerAction::class))
         ->assertSet('currentQuestionIndex', 1)
         ->assertDontSee('Next')

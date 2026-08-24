@@ -9,7 +9,9 @@ uses(LazilyRefreshDatabase::class);
 
 test('admin can generate a preview link for an exam from the admin panel', function () {
     $admin = User::factory()->admin()->create();
-    $exam = Exam::factory()->for($admin, 'creator')->create();
+    $exam = Exam::factory()->for($admin, 'creator')->create([
+        'show_index_number_field' => true,
+    ]);
 
     $response = $this
         ->actingAs($admin)
@@ -24,4 +26,8 @@ test('admin can generate a preview link for an exam from the admin panel', funct
         ->and($previewLink->isPreview())->toBeTrue();
 
     $response->assertRedirect($previewLink->examUrl());
+
+    $this->get($previewLink->examUrl())
+        ->assertOk()
+        ->assertSee('Index number');
 });
