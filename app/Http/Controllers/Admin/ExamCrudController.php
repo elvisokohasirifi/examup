@@ -191,11 +191,11 @@ class ExamCrudController extends CrudController
             'allows_null' => false,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
-        CRUD::field('allow_back_navigation')
-            ->label('Allow students to go back to previous questions')
-            ->type('checkbox')
-            ->default(true)
-            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        $this->addExamBooleanField(
+            'allow_back_navigation',
+            'Allow students to go back to previous questions',
+            $entry?->allow_back_navigation ?? true,
+        );
         CRUD::addField([
             'name' => 'shuffle_questions',
             'label' => 'Question order',
@@ -211,14 +211,11 @@ class ExamCrudController extends CrudController
         CRUD::field('time_limit_minutes')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('autosave_interval_seconds')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('expires_at')->type('datetime')->label('Exam expires at')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('show_score_to_student')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('show_correct_answers_to_student')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('show_index_number_field')
-            ->label('Ask for student index number')
-            ->type('checkbox')
-            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('disable_copy_paste')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('is_published')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        $this->addExamBooleanField('show_score_to_student', 'Show score to student', $entry?->show_score_to_student ?? false);
+        $this->addExamBooleanField('show_correct_answers_to_student', 'Show correct answers to student', $entry?->show_correct_answers_to_student ?? false);
+        $this->addExamBooleanField('show_index_number_field', 'Ask for student index number', $entry?->show_index_number_field ?? false);
+        $this->addExamBooleanField('disable_copy_paste', 'Disable copy and paste', $entry?->disable_copy_paste ?? false);
+        $this->addExamBooleanField('is_published', 'Publish exam', $entry?->is_published ?? false);
         CRUD::addField([
             'name' => 'questions_import',
             'label' => 'Import questions',
@@ -257,6 +254,18 @@ class ExamCrudController extends CrudController
             'type' => 'custom_html',
             'value' => view('vendor.backpack.crud.fields.exam_builder_outro')->render(),
             'wrapper' => false,
+        ]);
+    }
+
+    protected function addExamBooleanField(string $name, string $label, bool $value): void
+    {
+        CRUD::addField([
+            'name' => $name,
+            'label' => $label,
+            'type' => 'view',
+            'view' => 'vendor.backpack.crud.fields.exam_boolean_toggle',
+            'value' => $value,
+            'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
     }
 

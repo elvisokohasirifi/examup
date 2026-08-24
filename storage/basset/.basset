@@ -484,5 +484,23 @@
         "asset_path": "https://www.gravatar.com/avatar/cc8a6df0c67a0ff4b3bcf63e5f4457d9688a1a78be3221b865fa967ff11d0db7.jpg?s=80&d=blank&r=g",
         "asset_disk_path": "basset/www.gravatar.com/avatar/cc8a6df0c67a0ff4b3bcf63e5f4457d9688a1a78be3221b865fa967ff11d0db7.jpg",
         "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/b694fc8948af8a02b7a4104ddfff37f641bb93375f2763bc624caf4a849fa7e3.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/b694fc8948af8a02b7a4104ddfff37f641bb93375f2763bc624caf4a849fa7e3.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/b694fc8948af8a02b7a4104ddfff37f641bb93375f2763bc624caf4a849fa7e3.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/b694fc8948af8a02b7a4104ddfff37f641bb93375f2763bc624caf4a849fa7e3.jpg",
+        "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/1e3670ce1272a918e4b9d3171905bcf8dba4403b57ec80688e898bd63fe66726.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/1e3670ce1272a918e4b9d3171905bcf8dba4403b57ec80688e898bd63fe66726.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/1e3670ce1272a918e4b9d3171905bcf8dba4403b57ec80688e898bd63fe66726.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/1e3670ce1272a918e4b9d3171905bcf8dba4403b57ec80688e898bd63fe66726.jpg",
+        "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/e134fe06ed94a621010e946292cfbbedf091ebbe1ff8db1839a5358c34284550.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/e134fe06ed94a621010e946292cfbbedf091ebbe1ff8db1839a5358c34284550.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/e134fe06ed94a621010e946292cfbbedf091ebbe1ff8db1839a5358c34284550.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/e134fe06ed94a621010e946292cfbbedf091ebbe1ff8db1839a5358c34284550.jpg",
+        "asset_attributes": []
     }
 }
