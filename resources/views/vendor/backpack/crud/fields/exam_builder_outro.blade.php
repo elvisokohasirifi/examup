@@ -17,6 +17,29 @@
         const stepTriggers = () => document.querySelectorAll('[data-step-trigger]');
         const nextButton = document.querySelector('[data-exam-builder-next]');
         const prevButton = document.querySelector('[data-exam-builder-prev]');
+        const form = document.getElementById('crudForm');
+        const examCheckboxFields = [
+            'allow_back_navigation',
+            'shuffle_questions',
+            'show_score_to_student',
+            'show_correct_answers_to_student',
+            'show_index_number_field',
+            'disable_copy_paste',
+            'is_published',
+        ];
+
+        const syncExamCheckboxes = () => {
+            examCheckboxFields.forEach((fieldName) => {
+                const hiddenInput = form?.querySelector(`input[type="hidden"][name="${fieldName}"]`);
+                const checkbox = hiddenInput?.parentElement?.querySelector('input[type="checkbox"]');
+
+                if (!hiddenInput || !checkbox) {
+                    return;
+                }
+
+                hiddenInput.value = checkbox.checked ? '1' : '0';
+            });
+        };
 
         const setStep = (step) => {
             detailFields().forEach((field) => {
@@ -59,6 +82,14 @@
             document.querySelector('#exam-step-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
+        form?.addEventListener('change', (event) => {
+            if (event.target instanceof HTMLInputElement && event.target.type === 'checkbox') {
+                syncExamCheckboxes();
+            }
+        });
+        form?.addEventListener('submit', syncExamCheckboxes);
+
+        syncExamCheckboxes();
         setStep(1);
     })();
 </script>

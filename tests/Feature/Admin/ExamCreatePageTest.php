@@ -20,6 +20,7 @@ test('exam create page shows the question builder controls', function () {
         ->assertSee('Questions are loaded into the builder immediately')
         ->assertSee('data-question-import-input', false)
         ->assertSee('data-question-import-feedback', false)
+        ->assertSee('syncExamCheckboxes', false)
         ->assertSee('Add another question')
         ->assertSee('Accepted answers (one per line)');
 });
