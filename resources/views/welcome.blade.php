@@ -27,7 +27,7 @@
                         <span class="font-serif text-xl font-bold tracking-tight text-[#243b53]">ExamUp</span>
                     </a>
 
-                    <a href="{{ backpack_url('login') }}" class="inline-flex items-center gap-2 rounded-full bg-[#243b53] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#243b53]/15 transition duration-200 hover:-translate-y-0.5 hover:bg-[#35516e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f26d5b] focus-visible:ring-offset-2">
+                    <a href="{{ backpack_url('dashboard') }}" class="inline-flex items-center gap-2 rounded-full bg-[#243b53] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#243b53]/15 transition duration-200 hover:-translate-y-0.5 hover:bg-[#35516e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f26d5b] focus-visible:ring-offset-2">
                         Admin login <span aria-hidden="true">&rarr;</span>
                     </a>
                 </header>
