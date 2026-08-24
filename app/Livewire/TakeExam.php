@@ -35,6 +35,10 @@ class TakeExam extends Component
 
     public bool $submitted = false;
 
+    public bool $isUnavailable = false;
+
+    public string $unavailableMessage = '';
+
     public function mount(
         string $publicKey,
         string $accessToken,
@@ -44,7 +48,6 @@ class TakeExam extends Component
         $this->accessLink = ExamAccessLink::query()
             ->where('public_key', $publicKey)
             ->where('access_token', $accessToken)
-            ->where('is_active', true)
             ->with(['exam.questions.options'])
             ->firstOrFail();
 
@@ -68,13 +71,16 @@ class TakeExam extends Component
             return;
         }
 
-        abort_unless(! $this->exam->hasExpired(), 403);
-        abort_unless($this->accessLink->isAvailable(), 403);
+        $this->ensureExamIsAvailable();
     }
 
     public function startAttempt(StartExamAttemptAction $startExamAttempt): void
     {
         if ($this->attempt !== null) {
+            return;
+        }
+
+        if (! $this->ensureExamIsAvailable()) {
             return;
         }
 
@@ -89,8 +95,9 @@ class TakeExam extends Component
 
         $this->validate($rules);
 
-        abort_unless($this->accessLink->isAvailable(), 403);
-        abort_unless(! $this->exam->hasExpired(), 403);
+        if (! $this->ensureExamIsAvailable()) {
+            return;
+        }
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
         $this->rememberAttempt();
@@ -328,6 +335,27 @@ class TakeExam extends Component
         return Str::of($answer)
             ->squish()
             ->toString();
+    }
+
+    private function ensureExamIsAvailable(): bool
+    {
+        if ($this->exam->hasExpired()) {
+            $this->isUnavailable = true;
+            $this->unavailableMessage = 'This exam is no longer accepting responses because its availability period has ended.';
+
+            return false;
+        }
+
+        if (! $this->accessLink->isAvailable()) {
+            $this->isUnavailable = true;
+            $this->unavailableMessage = $this->accessLink->hasExpired()
+                ? 'This exam link has expired and is no longer accepting responses.'
+                : 'This exam link is no longer accepting responses.';
+
+            return false;
+        }
+
+        return true;
     }
 
     private function attemptSessionKey(): string

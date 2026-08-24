@@ -117,7 +117,7 @@ test('shuffled exams persist a question order for each attempt', function () {
         ->toBe($questions->pluck('id')->sort()->values()->all());
 });
 
-test('expired exams cannot be started even when the access link is still active', function () {
+test('expired exams show an unavailable message instead of a forbidden response', function () {
     $examiner = User::factory()->create();
 
     $exam = Exam::factory()->create([
@@ -134,7 +134,31 @@ test('expired exams cannot be started even when the access link is still active'
     Livewire::test(TakeExam::class, [
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
-    ])->assertForbidden();
+    ])
+        ->assertSee('This link has expired.')
+        ->assertSee('This exam is no longer accepting responses because its availability period has ended.');
+});
+
+test('expired access links show an unavailable message', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+        'expires_at' => now()->subMinute(),
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->assertSee('This link has expired.')
+        ->assertSee('This exam link has expired and is no longer accepting responses.');
 });
 
 test('students cannot go back and must answer each question before proceeding when back navigation is disabled', function () {

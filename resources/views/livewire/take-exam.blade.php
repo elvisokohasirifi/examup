@@ -1,5 +1,16 @@
 <div class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
+        @if ($isUnavailable)
+            <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
+                <div class="grid size-20 place-items-center rounded-[1.75rem] bg-amber-100 text-4xl shadow-sm">&#9203;</div>
+                <p class="mt-7 text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Exam unavailable</p>
+                <h1 class="mt-3 font-serif text-3xl text-slate-900 sm:text-4xl">This link has expired.</h1>
+                <p class="mt-4 max-w-md text-sm leading-7 text-slate-600">{{ $unavailableMessage }}</p>
+                <div class="mt-8 rounded-2xl bg-slate-50 px-5 py-4 text-sm leading-6 text-slate-600">
+                    If you believe this is unexpected, please contact the person who sent you the exam link.
+                </div>
+            </div>
+        @else
         <div class="flex flex-col gap-4 border-b border-amber-100 pb-6 md:flex-row md:items-end md:justify-between">
             <div class="space-y-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Online Exam</p>
@@ -158,6 +169,7 @@
                     @endforeach
                 @endif
             </div>
+        @endif
         @endif
     </div>
 </div>
