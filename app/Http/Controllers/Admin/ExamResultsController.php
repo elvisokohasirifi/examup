@@ -15,6 +15,7 @@ class ExamResultsController extends Controller
 
         $attempts = $exam->attempts()
             ->with('accessLink')
+            ->withCount('suspiciousActivities')
             ->whereHas('accessLink', fn ($query) => $query->where(function ($nestedQuery) {
                 $nestedQuery->whereNull('meta')
                     ->orWhere('meta->is_preview', false)

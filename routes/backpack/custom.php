@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Auth\GoogleLoginController;
 use App\Http\Controllers\Admin\ExamAccessController;
 use App\Http\Controllers\Admin\ExamAttemptCsvController;
+use App\Http\Controllers\Admin\ExamAttemptReviewController;
 use App\Http\Controllers\Admin\ExamCrudController;
 use App\Http\Controllers\Admin\ExamResultsController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,9 @@ Route::group([
     Route::post('exams/{exam}/access', [ExamAccessController::class, 'store'])->name('admin.exams.access.store');
     Route::get('exams/{exam}/preview', [ExamCrudController::class, 'preview'])->name('admin.exams.preview');
     Route::get('exams/{exam}/results', ExamResultsController::class)->name('admin.exams.results');
+    Route::get('exams/{exam}/attempts/{attempt}', ExamAttemptReviewController::class)
+        ->scopeBindings()
+        ->name('admin.exams.attempts.show');
     Route::get('exams/{exam}/results.csv', ExamAttemptCsvController::class)->name('admin.exams.csv');
 }); // this should be the absolute last line of this file
 
