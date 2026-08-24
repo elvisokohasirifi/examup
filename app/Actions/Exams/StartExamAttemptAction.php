@@ -33,6 +33,7 @@ class StartExamAttemptAction
                 'display_mode' => $exam->display_mode,
                 'autosave_interval_seconds' => $exam->autosave_interval_seconds,
                 'question_order' => $orderedQuestions->pluck('id')->all(),
+                'current_question_index' => 0,
             ],
         ]);
     }

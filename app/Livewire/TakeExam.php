@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Actions\Exams\ResumeExamAttemptAction;
 use App\Actions\Exams\SaveExamAnswerAction;
 use App\Actions\Exams\StartExamAttemptAction;
 use App\Actions\Exams\SubmitExamAttemptAction;
@@ -34,8 +35,12 @@ class TakeExam extends Component
 
     public bool $submitted = false;
 
-    public function mount(string $publicKey, string $accessToken): void
-    {
+    public function mount(
+        string $publicKey,
+        string $accessToken,
+        ResumeExamAttemptAction $resumeExamAttempt,
+        SubmitExamAttemptAction $submitExamAttempt,
+    ): void {
         $this->accessLink = ExamAccessLink::query()
             ->where('public_key', $publicKey)
             ->where('access_token', $accessToken)
@@ -43,15 +48,36 @@ class TakeExam extends Component
             ->with(['exam.questions.options'])
             ->firstOrFail();
 
-        abort_unless($this->accessLink->isAvailable(), 403);
-
         $this->exam = $this->accessLink->exam;
-        abort_unless(! $this->exam->hasExpired(), 403);
         $this->candidate['student_email'] = $this->accessLink->email ?? '';
+
+        $this->attempt = $resumeExamAttempt->fromSession(
+            $this->accessLink,
+            session($this->attemptSessionKey()),
+        ) ?? $resumeExamAttempt->activeForIndividualLink($this->accessLink);
+
+        if ($this->attempt !== null) {
+            $this->rememberAttempt();
+            $this->restoreAttemptState();
+
+            if (! $this->attempt->isFinished() && $this->attempt->expires_at?->isPast()) {
+                $this->attempt = $submitExamAttempt->handle($this->attempt, true);
+                $this->submitted = true;
+            }
+
+            return;
+        }
+
+        abort_unless(! $this->exam->hasExpired(), 403);
+        abort_unless($this->accessLink->isAvailable(), 403);
     }
 
     public function startAttempt(StartExamAttemptAction $startExamAttempt): void
     {
+        if ($this->attempt !== null) {
+            return;
+        }
+
         $rules = [
             'candidate.student_name' => ['required', 'string', 'max:255'],
             'candidate.student_email' => ['nullable', 'email', 'max:255'],
@@ -67,6 +93,7 @@ class TakeExam extends Component
         abort_unless(! $this->exam->hasExpired(), 403);
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
+        $this->rememberAttempt();
     }
 
     public function updatedResponses(mixed $value, ?string $key, SaveExamAnswerAction $saveExamAnswer): void
@@ -91,6 +118,7 @@ class TakeExam extends Component
 
         $this->saveCurrentQuestion($saveExamAnswer);
         $this->currentQuestionIndex = max($this->currentQuestionIndex - 1, 0);
+        $this->persistCurrentQuestionIndex();
     }
 
     public function nextQuestion(SaveExamAnswerAction $saveExamAnswer): void
@@ -104,6 +132,7 @@ class TakeExam extends Component
         $this->resetErrorBag('currentQuestionResponse');
         $this->saveCurrentQuestion($saveExamAnswer);
         $this->currentQuestionIndex = min($this->currentQuestionIndex + 1, max($this->questions->count() - 1, 0));
+        $this->persistCurrentQuestionIndex();
     }
 
     public function refreshAttemptState(SubmitExamAttemptAction $submitExamAttempt): void
@@ -299,5 +328,63 @@ class TakeExam extends Component
         return Str::of($answer)
             ->squish()
             ->toString();
+    }
+
+    private function attemptSessionKey(): string
+    {
+        return 'exam_attempts.'.$this->accessLink->id;
+    }
+
+    private function rememberAttempt(): void
+    {
+        if ($this->attempt !== null) {
+            session()->put($this->attemptSessionKey(), $this->attempt->id);
+        }
+    }
+
+    private function restoreAttemptState(): void
+    {
+        if ($this->attempt === null) {
+            return;
+        }
+
+        $this->responses = $this->attempt->answers
+            ->mapWithKeys(function ($answer): array {
+                $question = $this->questions->firstWhere('id', $answer->question_id);
+
+                if ($question?->isMultipleChoice()) {
+                    $selectedOptionIds = collect($answer->selected_option_ids)
+                        ->filter()
+                        ->values()
+                        ->all();
+
+                    return [
+                        $answer->question_id => $question->allows_multiple_selection
+                            ? ['selected_option_ids' => $selectedOptionIds]
+                            : ['selected_option_id' => $selectedOptionIds[0] ?? ''],
+                    ];
+                }
+
+                return [$answer->question_id => ['answer_text' => $answer->answer_text ?? '']];
+            })
+            ->all();
+
+        $maximumQuestionIndex = max($this->questions->count() - 1, 0);
+        $this->currentQuestionIndex = min(
+            max((int) data_get($this->attempt->meta, 'current_question_index', 0), 0),
+            $maximumQuestionIndex,
+        );
+    }
+
+    private function persistCurrentQuestionIndex(): void
+    {
+        if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        $meta = $this->attempt->meta ?? [];
+        $meta['current_question_index'] = $this->currentQuestionIndex;
+
+        $this->attempt->updateQuietly(['meta' => $meta]);
     }
 }

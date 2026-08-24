@@ -5,52 +5,63 @@ namespace App\Actions\Exams;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use App\Models\Question;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SubmitExamAttemptAction
 {
     public function handle(ExamAttempt $attempt, bool $automatic = false): ExamAttempt
     {
-        $attempt->loadMissing('exam.questions.options', 'answers');
+        return DB::transaction(function () use ($attempt, $automatic): ExamAttempt {
+            $attempt = ExamAttempt::query()
+                ->lockForUpdate()
+                ->findOrFail($attempt->id);
 
-        $answersByQuestion = $attempt->answers->keyBy('question_id');
-        $totalScore = 0.0;
-        $maxScore = (float) $attempt->exam->questions->sum('points');
+            if ($attempt->isFinished()) {
+                return $attempt->load(['exam', 'answers.question']);
+            }
 
-        foreach ($attempt->exam->questions as $question) {
-            $answer = $answersByQuestion->get($question->id)
-                ?? new ExamAnswer([
-                    'exam_attempt_id' => $attempt->id,
-                    'question_id' => $question->id,
+            $attempt->load('exam.questions.options', 'answers');
+
+            $answersByQuestion = $attempt->answers->keyBy('question_id');
+            $totalScore = 0.0;
+            $maxScore = (float) $attempt->exam->questions->sum('points');
+
+            foreach ($attempt->exam->questions as $question) {
+                $answer = $answersByQuestion->get($question->id)
+                    ?? new ExamAnswer([
+                        'exam_attempt_id' => $attempt->id,
+                        'question_id' => $question->id,
+                    ]);
+
+                [$isCorrect, $score, $gradedPayload] = $this->gradeQuestion($question, $answer);
+
+                $answer->fill([
+                    'is_correct' => $isCorrect,
+                    'score' => $score,
+                    'graded_payload' => $gradedPayload,
+                    'answered_at' => $answer->answered_at ?? now(),
                 ]);
+                $answer->save();
 
-            [$isCorrect, $score, $gradedPayload] = $this->gradeQuestion($question, $answer);
+                $totalScore += $score;
+            }
 
-            $answer->fill([
-                'is_correct' => $isCorrect,
-                'score' => $score,
-                'graded_payload' => $gradedPayload,
-                'answered_at' => $answer->answered_at ?? now(),
+            $startedAt = $attempt->started_at ?? $attempt->created_at;
+            $submittedAt = now();
+
+            $attempt->update([
+                'status' => $automatic ? ExamAttempt::STATUS_AUTO_SUBMITTED : ExamAttempt::STATUS_SUBMITTED,
+                'submitted_at' => $submittedAt,
+                'auto_submitted_at' => $automatic ? $submittedAt : null,
+                'duration_seconds' => $startedAt?->diffInSeconds($submittedAt),
+                'score' => $totalScore,
+                'max_score' => $maxScore,
+                'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
             ]);
-            $answer->save();
 
-            $totalScore += $score;
-        }
-
-        $startedAt = $attempt->started_at ?? $attempt->created_at;
-        $submittedAt = now();
-
-        $attempt->update([
-            'status' => $automatic ? ExamAttempt::STATUS_AUTO_SUBMITTED : ExamAttempt::STATUS_SUBMITTED,
-            'submitted_at' => $submittedAt,
-            'auto_submitted_at' => $automatic ? $submittedAt : null,
-            'duration_seconds' => $startedAt?->diffInSeconds($submittedAt),
-            'score' => $totalScore,
-            'max_score' => $maxScore,
-            'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
-        ]);
-
-        return $attempt->fresh(['exam', 'answers.question']);
+            return $attempt->fresh(['exam', 'answers.question']);
+        }, 3);
     }
 
     /**
