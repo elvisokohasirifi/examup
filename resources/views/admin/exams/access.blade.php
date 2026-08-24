@@ -70,6 +70,7 @@
                                 <th>Sent</th>
                                 <th>Expires</th>
                                 <th>Status</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,11 +88,28 @@
                                     </td>
                                     <td>{{ $link->last_sent_at?->format('M j, Y g:i A') ?: '-' }}</td>
                                     <td>{{ $link->expires_at?->format('M j, Y g:i A') ?: '-' }}</td>
-                                    <td>{{ $link->is_active ? 'Active' : 'Disabled' }}</td>
+                                    <td>
+                                        @if ($exam->hasExpired() || $link->hasExpired())
+                                            <span class="badge bg-warning text-dark">Expired</span>
+                                        @elseif ($link->is_active)
+                                            <span class="badge bg-success">Active</span>
+                                        @else
+                                            <span class="badge bg-secondary">Disabled</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if (data_get($link->meta, 'shareable'))
+                                            <form method="POST" action="{{ route('admin.exams.access.destroy', [$exam, $link]) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted">No links created yet.</td>
+                                    <td colspan="7" class="text-center text-muted">No links created yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

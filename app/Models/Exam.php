@@ -48,6 +48,16 @@ class Exam extends Model
                 $exam->created_by = backpack_user()?->id ?? auth()->id();
             }
         });
+
+        static::updated(function (Exam $exam): void {
+            if (! $exam->wasChanged('expires_at')) {
+                return;
+            }
+
+            $exam->accessLinks()
+                ->where('meta->shareable', true)
+                ->update(['expires_at' => $exam->expires_at]);
+        });
     }
 
     protected function casts(): array

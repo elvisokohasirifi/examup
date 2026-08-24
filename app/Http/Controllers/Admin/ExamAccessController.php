@@ -72,6 +72,19 @@ class ExamAccessController extends Controller
             ->with('status', 'Invitation links created and emailed successfully.');
     }
 
+    public function destroy(Exam $exam, ExamAccessLink $accessLink): RedirectResponse
+    {
+        abort_unless(backpack_user()->can('update', $exam), 403);
+        abort_unless($accessLink->exam_id === $exam->id, 404);
+        abort_unless((bool) data_get($accessLink->meta, 'shareable'), 404);
+
+        $accessLink->delete();
+
+        return redirect()
+            ->route('admin.exams.access', $exam)
+            ->with('status', 'Shareable link deleted successfully.');
+    }
+
     protected function sendInvite(ExamAccessLink $link): void
     {
         if (blank($link->email)) {

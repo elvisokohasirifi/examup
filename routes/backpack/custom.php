@@ -35,6 +35,9 @@ Route::group([
     Route::crud('exam', ExamCrudController::class);
     Route::get('exams/{exam}/access', [ExamAccessController::class, 'show'])->name('admin.exams.access');
     Route::post('exams/{exam}/access', [ExamAccessController::class, 'store'])->name('admin.exams.access.store');
+    Route::delete('exams/{exam}/access/{accessLink}', [ExamAccessController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('admin.exams.access.destroy');
     Route::get('exams/{exam}/preview', [ExamCrudController::class, 'preview'])->name('admin.exams.preview');
     Route::get('exams/{exam}/results', ExamResultsController::class)->name('admin.exams.results');
     Route::get('exams/{exam}/attempts/{attempt}', ExamAttemptReviewController::class)
