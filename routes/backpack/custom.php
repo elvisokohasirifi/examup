@@ -30,6 +30,8 @@ Route::group([
     ),
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
+    Route::get('exam/questions/sample.txt', [ExamCrudController::class, 'downloadQuestionImportSample'])
+        ->name('admin.exams.questions.sample');
     Route::crud('exam', ExamCrudController::class);
     Route::get('exams/{exam}/access', [ExamAccessController::class, 'show'])->name('admin.exams.access');
     Route::post('exams/{exam}/access', [ExamAccessController::class, 'store'])->name('admin.exams.access.store');

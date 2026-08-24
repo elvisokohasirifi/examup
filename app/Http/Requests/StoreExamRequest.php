@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\Exams\ImportExamQuestionsFromTextAction;
 use App\Models\Exam;
 use App\Models\Question;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
+use InvalidArgumentException;
 
 class StoreExamRequest extends FormRequest
 {
@@ -53,6 +56,7 @@ class StoreExamRequest extends FormRequest
             'disable_copy_paste' => ['boolean'],
             'is_published' => ['boolean'],
             'expires_at' => ['nullable', 'date', 'after:now'],
+            'questions_import' => ['nullable', 'file', 'mimes:txt', 'max:1024'],
             'questions' => ['required', 'array', 'min:1'],
             'questions.*.id' => ['nullable', 'uuid'],
             'questions.*.type' => ['required', Rule::in([Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_FILL_IN])],
@@ -71,7 +75,19 @@ class StoreExamRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $normalizedQuestions = collect($this->input('questions', []))
+        $questions = $this->input('questions', []);
+
+        if ($this->hasFile('questions_import')) {
+            try {
+                $questions = app(ImportExamQuestionsFromTextAction::class)->handle($this->file('questions_import'));
+            } catch (InvalidArgumentException $exception) {
+                throw ValidationException::withMessages([
+                    'questions_import' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        $normalizedQuestions = collect($questions)
             ->map(function (array $question): array {
                 $acceptedAnswers = $question['accepted_answers'] ?? [];
                 if (is_string($acceptedAnswers)) {

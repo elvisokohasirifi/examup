@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Exams\ImportExamQuestionsFromTextAction;
 use App\Http\Requests\StoreExamRequest;
 use App\Models\Exam;
 use App\Models\Question;
@@ -17,6 +18,7 @@ use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExamCrudController extends CrudController
 {
@@ -150,6 +152,15 @@ class ExamCrudController extends CrudController
         return redirect()->away($link->examUrl());
     }
 
+    public function downloadQuestionImportSample(ImportExamQuestionsFromTextAction $importExamQuestions): StreamedResponse
+    {
+        abort_unless(backpack_user()->can('create', Exam::class), 403);
+
+        return response()->streamDownload(function () use ($importExamQuestions): void {
+            echo $importExamQuestions->sample();
+        }, 'exam-questions-sample.txt', ['Content-Type' => 'text/plain; charset=UTF-8']);
+    }
+
     protected function addFields(): void
     {
         $entry = CRUD::getCurrentEntry();
@@ -208,6 +219,15 @@ class ExamCrudController extends CrudController
             ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('disable_copy_paste')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('is_published')->type('checkbox')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        CRUD::addField([
+            'name' => 'questions_import',
+            'label' => 'Import questions',
+            'type' => 'view',
+            'view' => 'vendor.backpack.crud.fields.exam_questions_import',
+            'entity' => false,
+            'upload' => true,
+            'wrapper' => ['class' => 'form-group col-md-12 js-exam-step js-exam-step-2'],
+        ]);
         CRUD::addField([
             'name' => 'questions',
             'label' => 'Questions',

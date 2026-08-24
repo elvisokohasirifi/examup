@@ -15,6 +15,8 @@ test('exam create page shows the question builder controls', function () {
     $response->assertOk()
         ->assertSee('Exam Builder')
         ->assertSee('Continue to questions')
+        ->assertSee('Import questions from a text file')
+        ->assertSee('Download sample file')
         ->assertSee('Add another question')
         ->assertSee('Accepted answers (one per line)');
 });
