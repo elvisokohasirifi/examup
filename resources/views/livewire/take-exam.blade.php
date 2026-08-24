@@ -120,15 +120,7 @@
                                 No backtracking
                             </div>
                         @endif
-                        <div class="flex gap-3">
-                            @if ($exam->display_mode === 'one_at_a_time')
-                                @if ($exam->allow_back_navigation && $currentQuestionIndex > 0)
-                                    <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Previous</button>
-                                @endif
-                                @if ($currentQuestionIndex < max($this->questions->count() - 1, 0))
-                                    <button type="button" wire:click="nextQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900">Next</button>
-                                @endif
-                            @endif
+                        <div>
                             <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
                         </div>
                     </div>
@@ -186,6 +178,19 @@
                                     class="mt-6 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-800 outline-none focus:border-amber-400"
                                     placeholder="Type your answer here"
                                 ></textarea>
+                            @endif
+
+                            @if ($exam->display_mode === 'one_at_a_time')
+                                <div class="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+                                    <div>
+                                        @if ($exam->allow_back_navigation && $currentQuestionIndex > 0)
+                                            <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">Previous</button>
+                                        @endif
+                                    </div>
+                                    @if ($currentQuestionIndex < max($this->questions->count() - 1, 0))
+                                        <button type="button" wire:click="nextQuestion" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Next</button>
+                                    @endif
+                                </div>
                             @endif
                         </section>
                     @endforeach
