@@ -161,6 +161,27 @@ test('student email addresses must include a valid domain suffix', function () {
         ->assertHasErrors(['candidate.student_email']);
 });
 
+test('student names only allow letters and common name punctuation', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student 123')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertHasErrors(['candidate.student_name']);
+});
+
 test('shuffled exams persist a question order for each attempt', function () {
     $examiner = User::factory()->create();
 

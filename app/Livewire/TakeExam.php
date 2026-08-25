@@ -98,7 +98,7 @@ class TakeExam extends Component
         }
 
         $rules = [
-            'candidate.student_name' => ['required', 'string', 'max:255'],
+            'candidate.student_name' => $this->studentNameRules(),
             'candidate.student_email' => $this->studentEmailRules(),
         ];
 
@@ -398,6 +398,20 @@ class TakeExam extends Component
             'email:rfc',
             'max:255',
             'regex:/^[^@\\s]+@(?:[a-z0-9-]+\\.)+[a-z]{2,}$/i',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function studentNameRules(): array
+    {
+        return [
+            'required',
+            'string',
+            'min:2',
+            'max:255',
+            "regex:/^[\\p{L}]+(?:[ .,'-][\\p{L}]+)*$/u",
         ];
     }
 
