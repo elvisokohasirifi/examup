@@ -244,6 +244,39 @@ test('leaving an exam tab is logged as suspicious activity', function () {
     expect(SuspiciousActivity::query()->count())->toBe(1);
 });
 
+test('copy and paste attempts are logged as suspicious activity', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('logClientEvent', 'copy')
+        ->call('logClientEvent', 'paste');
+
+    $this->assertDatabaseHas('suspicious_activities', [
+        'exam_attempt_id' => $component->get('attempt.id'),
+        'event_type' => 'copy',
+        'severity' => 'medium',
+    ]);
+    $this->assertDatabaseHas('suspicious_activities', [
+        'exam_attempt_id' => $component->get('attempt.id'),
+        'event_type' => 'paste',
+        'severity' => 'medium',
+    ]);
+});
+
 test('shuffled exams persist a question order for each attempt', function () {
     $examiner = User::factory()->create();
 

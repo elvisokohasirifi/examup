@@ -11,7 +11,8 @@
     {{ $slot }}
     @livewireScripts
     <script>
-        window.examActivityMonitor = () => ({
+        window.examActivityMonitor = (options = {}) => ({
+            disableCopyPaste: options.disableCopyPaste ?? false,
             lastReportedAt: 0,
 
             init() {
@@ -29,13 +30,28 @@
                     });
                 };
 
+                this.onCopy = (event) => this.handleClipboardEvent(event, 'copy');
+                this.onPaste = (event) => this.handleClipboardEvent(event, 'paste');
+
                 document.addEventListener('visibilitychange', this.onVisibilityChange);
                 window.addEventListener('blur', this.onWindowBlur);
+                document.addEventListener('copy', this.onCopy);
+                document.addEventListener('paste', this.onPaste);
             },
 
             destroy() {
                 document.removeEventListener('visibilitychange', this.onVisibilityChange);
                 window.removeEventListener('blur', this.onWindowBlur);
+                document.removeEventListener('copy', this.onCopy);
+                document.removeEventListener('paste', this.onPaste);
+            },
+
+            handleClipboardEvent(event, eventType) {
+                this.report(eventType);
+
+                if (this.disableCopyPaste) {
+                    event.preventDefault();
+                }
             },
 
             report(eventType) {
