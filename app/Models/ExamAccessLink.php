@@ -70,6 +70,15 @@ class ExamAccessLink extends Model
         return $this->hasMany(ExamAttempt::class);
     }
 
+    public function attemptForStudentEmail(string $email): ?ExamAttempt
+    {
+        return $this->attempts()
+            ->with('answers')
+            ->whereRaw('LOWER(student_email) = ?', [Str::lower(trim($email))])
+            ->latest('started_at')
+            ->first();
+    }
+
     public function hasExpired(): bool
     {
         return $this->expires_at !== null && $this->expires_at->isPast();

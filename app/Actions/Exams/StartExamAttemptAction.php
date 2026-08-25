@@ -5,11 +5,21 @@ namespace App\Actions\Exams;
 use App\Models\ExamAccessLink;
 use App\Models\ExamAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class StartExamAttemptAction
 {
     public function handle(ExamAccessLink $accessLink, array $studentData, Request $request): ExamAttempt
     {
+        $studentEmail = Str::lower(trim((string) ($studentData['student_email'] ?? $accessLink->email)));
+
+        if (blank($accessLink->email) && $accessLink->attemptForStudentEmail($studentEmail) !== null) {
+            throw ValidationException::withMessages([
+                'candidate.student_email' => 'An exam attempt already exists for this email address.',
+            ]);
+        }
+
         $exam = $accessLink->exam()->with('questions')->firstOrFail();
         $orderedQuestions = $exam->questions->sortBy('position')->values();
 
@@ -21,7 +31,7 @@ class StartExamAttemptAction
             'exam_id' => $exam->id,
             'exam_access_link_id' => $accessLink->id,
             'student_name' => $studentData['student_name'],
-            'student_email' => $studentData['student_email'] ?? $accessLink->email,
+            'student_email' => $studentEmail,
             'student_index_number' => $studentData['student_index_number'] ?? null,
             'status' => ExamAttempt::STATUS_IN_PROGRESS,
             'started_at' => now(),

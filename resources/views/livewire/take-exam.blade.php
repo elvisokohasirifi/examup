@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">

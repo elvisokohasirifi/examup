@@ -108,6 +108,23 @@ class TakeExam extends Component
 
         $this->validate($rules);
 
+        if (blank($this->accessLink->email)) {
+            $existingAttempt = $this->accessLink->attemptForStudentEmail($this->candidate['student_email']);
+
+            if ($existingAttempt !== null) {
+                if (! $existingAttempt->isFinished()) {
+                    $this->resumableAttempt = $existingAttempt;
+                    $this->addError('candidate.student_email', 'An unfinished attempt already exists for this email. Resume it to continue.');
+
+                    return;
+                }
+
+                $this->addError('candidate.student_email', 'This email address has already completed this exam.');
+
+                return;
+            }
+        }
+
         if (! $this->ensureExamIsAvailable()) {
             return;
         }
@@ -233,10 +250,14 @@ class TakeExam extends Component
             return;
         }
 
+        if (! in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur'], true)) {
+            return;
+        }
+
         SuspiciousActivity::create([
             'exam_attempt_id' => $this->attempt->id,
             'event_type' => $eventType,
-            'severity' => in_array($eventType, ['copy', 'paste', 'blur'], true) ? 'medium' : 'low',
+            'severity' => in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur'], true) ? 'medium' : 'low',
             'details' => 'Client-side deterrent event captured during exam attempt.',
             'context' => [
                 'question_index' => $this->currentQuestionIndex,

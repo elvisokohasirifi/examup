@@ -11,6 +11,43 @@
     {{ $slot }}
     @livewireScripts
     <script>
+        window.examActivityMonitor = () => ({
+            lastReportedAt: 0,
+
+            init() {
+                this.onVisibilityChange = () => {
+                    if (document.hidden) {
+                        this.report('tab_hidden');
+                    }
+                };
+
+                this.onWindowBlur = () => {
+                    window.setTimeout(() => {
+                        if (!document.hasFocus()) {
+                            this.report('window_blur');
+                        }
+                    });
+                };
+
+                document.addEventListener('visibilitychange', this.onVisibilityChange);
+                window.addEventListener('blur', this.onWindowBlur);
+            },
+
+            destroy() {
+                document.removeEventListener('visibilitychange', this.onVisibilityChange);
+                window.removeEventListener('blur', this.onWindowBlur);
+            },
+
+            report(eventType) {
+                if (Date.now() - this.lastReportedAt < 10000) {
+                    return;
+                }
+
+                this.lastReportedAt = Date.now();
+                this.$wire.logClientEvent(eventType).catch(() => {});
+            },
+        });
+
         document.addEventListener('livewire:init', () => {
             Livewire.on('exam-attempt-started', ({ attemptId }) => {
                 const url = new URL(window.location.href);

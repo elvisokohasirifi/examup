@@ -10,6 +10,7 @@ use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Models\SuspiciousActivity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Livewire\Livewire;
@@ -180,6 +181,67 @@ test('student names only allow letters and common name punctuation', function ()
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->assertHasErrors(['candidate.student_name']);
+});
+
+test('a shared link blocks a student email that has already completed the exam', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+        'email' => null,
+        'max_attempts' => 0,
+    ]);
+    ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $link->id,
+        'student_email' => 'Student@Example.com',
+        'status' => ExamAttempt::STATUS_SUBMITTED,
+        'submitted_at' => now(),
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertHasErrors(['candidate.student_email']);
+
+    expect($link->attempts()->count())->toBe(1);
+});
+
+test('leaving an exam tab is logged as suspicious activity', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('logClientEvent', 'tab_hidden');
+
+    $this->assertDatabaseHas('suspicious_activities', [
+        'exam_attempt_id' => $component->get('attempt.id'),
+        'event_type' => 'tab_hidden',
+        'severity' => 'medium',
+    ]);
+
+    expect(SuspiciousActivity::query()->count())->toBe(1);
 });
 
 test('shuffled exams persist a question order for each attempt', function () {
