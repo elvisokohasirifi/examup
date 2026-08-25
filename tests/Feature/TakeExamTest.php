@@ -186,6 +186,31 @@ test('student names only allow letters and common name punctuation', function ()
         ->assertHasErrors(['candidate.student_name']);
 });
 
+test('fullscreen is required before a student can start a fullscreen exam', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'require_fullscreen' => true,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertHasErrors(['fullscreen'])
+        ->set('fullscreenConfirmed', true)
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertSet('attempt.student_email', 'student@example.com');
+});
+
 test('a shared link blocks a student email that has already completed the exam', function () {
     $examiner = User::factory()->create();
     $exam = Exam::factory()->create([

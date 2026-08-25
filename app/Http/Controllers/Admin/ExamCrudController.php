@@ -99,6 +99,7 @@ class ExamCrudController extends CrudController
         CRUD::column('show_correct_answers_to_student')->type('boolean');
         CRUD::column('show_index_number_field')->type('boolean');
         CRUD::column('disable_copy_paste')->type('boolean');
+        CRUD::column('require_fullscreen')->type('boolean');
         CRUD::addColumn([
             'name' => 'exam_actions',
             'label' => 'Actions',
@@ -215,6 +216,7 @@ class ExamCrudController extends CrudController
         $this->addExamBooleanField('show_correct_answers_to_student', 'Show correct answers to student', $entry?->show_correct_answers_to_student ?? false);
         $this->addExamBooleanField('show_index_number_field', 'Ask for student index number', $entry?->show_index_number_field ?? false);
         $this->addExamBooleanField('disable_copy_paste', 'Disable copy and paste', $entry?->disable_copy_paste ?? false);
+        $this->addExamBooleanField('require_fullscreen', 'Require fullscreen before starting', $entry?->require_fullscreen ?? false);
         $this->addExamBooleanField('is_published', 'Publish exam', $entry?->is_published ?? false);
         CRUD::addField([
             'name' => 'questions_import',

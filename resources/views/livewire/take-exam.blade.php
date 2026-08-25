@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -47,6 +47,9 @@
                         @if ($exam->time_limit_minutes)
                             <p>Time limit: {{ $exam->time_limit_minutes }} minutes</p>
                         @endif
+                        @if ($exam->require_fullscreen)
+                            <p>Fullscreen mode is required before you can begin. Leaving fullscreen will be recorded.</p>
+                        @endif
                         @if ($exam->expires_at)
                             <p>Available until: {{ $exam->expires_at->format('M j, Y g:i A') }}</p>
                         @endif
@@ -63,11 +66,11 @@
                             <input type="email" wire:model="candidate.student_email" class="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 outline-none ring-0 focus:border-amber-400" />
                         </label>
                         @error('candidate.student_email') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-                        <button type="button" wire:click="resumeAttempt" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Resume exam</button>
+                        <button type="button" x-on:click="resumeExam()" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Resume exam</button>
                         <button type="button" wire:click="startNewAttempt" class="block text-sm font-medium text-slate-700 underline decoration-amber-400 underline-offset-4">Start a new attempt</button>
                     </div>
                 @else
-                <form wire:submit="startAttempt" class="space-y-4 rounded-3xl bg-amber-50 p-6">
+                <form x-on:submit.prevent="beginAttempt()" class="space-y-4 rounded-3xl bg-amber-50 p-6">
                     <h2 class="text-xl font-semibold text-slate-900">Student details</h2>
                     <label class="block text-sm font-medium text-slate-700">
                         Full name
@@ -86,6 +89,7 @@
                     @error('candidate.student_name') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     @error('candidate.student_email') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     @error('candidate.student_index_number') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('fullscreen') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     <button type="submit" class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Start exam</button>
                 </form>
                 @endif

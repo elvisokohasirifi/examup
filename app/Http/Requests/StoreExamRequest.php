@@ -54,6 +54,7 @@ class StoreExamRequest extends FormRequest
             'show_correct_answers_to_student' => ['boolean'],
             'show_index_number_field' => ['boolean'],
             'disable_copy_paste' => ['boolean'],
+            'require_fullscreen' => ['boolean'],
             'is_published' => ['boolean'],
             'expires_at' => ['nullable', 'date', 'after:now'],
             'questions_import' => ['nullable', 'file', 'mimes:txt', 'max:1024'],
@@ -135,6 +136,7 @@ class StoreExamRequest extends FormRequest
             'show_correct_answers_to_student' => false,
             'show_index_number_field' => false,
             'disable_copy_paste' => false,
+            'require_fullscreen' => false,
             'is_published' => false,
         ];
 

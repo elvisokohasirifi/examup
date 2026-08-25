@@ -24,6 +24,7 @@ test('admin can create an exam with nested questions and options from the exam f
             'show_correct_answers_to_student' => 'on',
             'show_index_number_field' => 'on',
             'disable_copy_paste' => 'on',
+            'require_fullscreen' => 'on',
             'is_published' => 'on',
             'questions' => [
                 [
@@ -61,6 +62,7 @@ test('admin can create an exam with nested questions and options from the exam f
         'show_correct_answers_to_student' => 1,
         'show_index_number_field' => 1,
         'disable_copy_paste' => 1,
+        'require_fullscreen' => 1,
         'is_published' => 1,
     ]);
 

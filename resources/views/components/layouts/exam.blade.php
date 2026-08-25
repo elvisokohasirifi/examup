@@ -13,6 +13,7 @@
     <script>
         window.examActivityMonitor = (options = {}) => ({
             disableCopyPaste: options.disableCopyPaste ?? false,
+            requireFullscreen: options.requireFullscreen ?? false,
             lastReportedAt: 0,
 
             init() {
@@ -32,11 +33,21 @@
 
                 this.onCopy = (event) => this.handleClipboardEvent(event, 'copy');
                 this.onPaste = (event) => this.handleClipboardEvent(event, 'paste');
+                this.onFullscreenChange = () => {
+                    const isFullscreen = Boolean(document.fullscreenElement);
+
+                    this.$wire.$set('fullscreenConfirmed', isFullscreen);
+
+                    if (this.requireFullscreen && !isFullscreen) {
+                        this.report('fullscreen_exit');
+                    }
+                };
 
                 document.addEventListener('visibilitychange', this.onVisibilityChange);
                 window.addEventListener('blur', this.onWindowBlur);
                 document.addEventListener('copy', this.onCopy);
                 document.addEventListener('paste', this.onPaste);
+                document.addEventListener('fullscreenchange', this.onFullscreenChange);
             },
 
             destroy() {
@@ -44,6 +55,7 @@
                 window.removeEventListener('blur', this.onWindowBlur);
                 document.removeEventListener('copy', this.onCopy);
                 document.removeEventListener('paste', this.onPaste);
+                document.removeEventListener('fullscreenchange', this.onFullscreenChange);
             },
 
             handleClipboardEvent(event, eventType) {
@@ -52,6 +64,30 @@
                 if (this.disableCopyPaste) {
                     event.preventDefault();
                 }
+            },
+
+            async beginAttempt() {
+                await this.enterFullscreenIfRequired();
+                await this.$wire.startAttempt();
+            },
+
+            async resumeExam() {
+                await this.enterFullscreenIfRequired();
+                await this.$wire.resumeAttempt();
+            },
+
+            async enterFullscreenIfRequired() {
+                if (!this.requireFullscreen || document.fullscreenElement) {
+                    return;
+                }
+
+                try {
+                    await document.documentElement.requestFullscreen();
+                } catch (error) {
+                    // The server-side validation displays the fullscreen requirement message.
+                }
+
+                await this.$wire.$set('fullscreenConfirmed', Boolean(document.fullscreenElement));
             },
 
             report(eventType) {

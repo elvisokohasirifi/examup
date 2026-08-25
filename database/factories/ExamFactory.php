@@ -32,6 +32,7 @@ class ExamFactory extends Factory
             'show_correct_answers_to_student' => fake()->boolean(),
             'show_index_number_field' => fake()->boolean(),
             'disable_copy_paste' => true,
+            'require_fullscreen' => false,
             'is_published' => true,
             'published_at' => now(),
             'expires_at' => fake()->optional()->dateTimeBetween('+1 day', '+1 month'),

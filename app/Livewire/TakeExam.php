@@ -37,6 +37,8 @@ class TakeExam extends Component
 
     public bool $submitted = false;
 
+    public bool $fullscreenConfirmed = false;
+
     public bool $showSubmitConfirmation = false;
 
     public bool $isUnavailable = false;
@@ -110,6 +112,10 @@ class TakeExam extends Component
 
         $this->validate($rules);
 
+        if (! $this->meetsFullscreenRequirement()) {
+            return;
+        }
+
         if (blank($this->accessLink->email)) {
             $existingAttempt = $this->accessLink->attemptForStudentEmail($this->candidate['student_email']);
 
@@ -145,6 +151,10 @@ class TakeExam extends Component
         $this->validate([
             'candidate.student_email' => $this->studentEmailRules(),
         ]);
+
+        if (! $this->meetsFullscreenRequirement()) {
+            return;
+        }
 
         if (! hash_equals(
             Str::of((string) $this->resumableAttempt->student_email)->lower()->trim()->toString(),
@@ -279,14 +289,14 @@ class TakeExam extends Component
             return;
         }
 
-        if (! in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur'], true)) {
+        if (! in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true)) {
             return;
         }
 
         SuspiciousActivity::create([
             'exam_attempt_id' => $this->attempt->id,
             'event_type' => $eventType,
-            'severity' => in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur'], true) ? 'medium' : 'low',
+            'severity' => in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true) ? 'medium' : 'low',
             'details' => 'Client-side deterrent event captured during exam attempt.',
             'context' => [
                 'question_index' => $this->currentQuestionIndex,
@@ -436,6 +446,17 @@ class TakeExam extends Component
         return Str::of($answer)
             ->squish()
             ->toString();
+    }
+
+    private function meetsFullscreenRequirement(): bool
+    {
+        if (! $this->exam->require_fullscreen || $this->fullscreenConfirmed) {
+            return true;
+        }
+
+        $this->addError('fullscreen', 'This exam requires fullscreen mode before you can continue.');
+
+        return false;
     }
 
     /**
