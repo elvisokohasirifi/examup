@@ -37,6 +37,8 @@ class TakeExam extends Component
 
     public bool $submitted = false;
 
+    public bool $showSubmitConfirmation = false;
+
     public bool $isUnavailable = false;
 
     public string $unavailableMessage = '';
@@ -219,6 +221,31 @@ class TakeExam extends Component
         }
     }
 
+    public function requestSubmission(): void
+    {
+        if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        if (! $this->canSubmitCurrentState()) {
+            $message = $this->exam->display_mode === 'one_at_a_time' && ! $this->exam->allow_back_navigation
+                ? 'Answer this question before submitting. You cannot go back once you move on.'
+                : 'Answer this question before submitting.';
+
+            $this->addError('currentQuestionResponse', $message);
+
+            return;
+        }
+
+        $this->resetErrorBag('currentQuestionResponse');
+        $this->showSubmitConfirmation = true;
+    }
+
+    public function cancelSubmission(): void
+    {
+        $this->showSubmitConfirmation = false;
+    }
+
     public function submitExam(SubmitExamAttemptAction $submitExamAttempt, bool $automatic = false): void
     {
         if ($this->attempt === null || $this->attempt->isFinished()) {
@@ -234,6 +261,8 @@ class TakeExam extends Component
 
             return;
         }
+
+        $this->showSubmitConfirmation = false;
 
         foreach ($this->questions as $question) {
             app(SaveExamAnswerAction::class)->handle($this->attempt, $question, $this->payloadForQuestion($question));

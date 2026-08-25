@@ -130,7 +130,7 @@
                             </div>
                         @endif
                         <div>
-                            <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
+                            <button type="button" wire:click="requestSubmission" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
                         </div>
                     </div>
 
@@ -203,6 +203,20 @@
                             @endif
                         </section>
                     @endforeach
+
+                    @if ($showSubmitConfirmation)
+                        <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
+                            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Final check</p>
+                                <h2 id="submit-confirmation-title" class="mt-2 text-2xl font-semibold text-slate-900">Submit your exam?</h2>
+                                <p class="mt-3 text-sm leading-6 text-slate-600">Your answers will be submitted and you will not be able to edit them afterwards.</p>
+                                <div class="mt-6 flex flex-wrap justify-end gap-3">
+                                    <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
+                                    <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Yes, submit exam</button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 @endif
             </div>
         @endif
