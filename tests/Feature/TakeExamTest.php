@@ -442,6 +442,7 @@ test('question banks randomly select and persist the configured number of questi
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])
+        ->assertSee('Questions: 2')
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class));

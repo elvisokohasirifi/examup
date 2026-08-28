@@ -365,6 +365,14 @@ class TakeExam extends Component
         return collect([$this->questions->get($this->currentQuestionIndex)])->filter();
     }
 
+    public function getQuestionsShownToCandidateProperty(): int
+    {
+        return min(
+            $this->questions->count(),
+            $this->exam->questions_per_attempt ?? $this->questions->count(),
+        );
+    }
+
     public function getTimeRemainingProperty(): ?int
     {
         if ($this->attempt?->expires_at === null) {

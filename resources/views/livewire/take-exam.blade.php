@@ -38,7 +38,7 @@
                         @if ($exam->instructions)
                             <p>{{ $exam->instructions }}</p>
                         @endif
-                        <p>Questions: {{ $this->questions->count() }}</p>
+                        <p>Questions: {{ $this->questionsShownToCandidate }}</p>
                         <p>Display: {{ $exam->display_mode === 'all' ? 'All questions at once' : 'One question at a time' }}</p>
                         @if ($exam->display_mode === 'one_at_a_time' && ! $exam->allow_back_navigation)
                             <p>You cannot go back to a previous question once you continue.</p>
