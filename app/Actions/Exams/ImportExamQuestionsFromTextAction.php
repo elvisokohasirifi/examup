@@ -16,7 +16,19 @@ class ImportExamQuestionsFromTextAction
     {
         $contents = file_get_contents($file->getRealPath());
 
-        if ($contents === false || blank($contents)) {
+        if ($contents === false) {
+            throw new InvalidArgumentException('The question import file could not be read.');
+        }
+
+        return $this->fromText($contents);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fromText(string $contents): array
+    {
+        if (blank($contents)) {
             throw new InvalidArgumentException('The question import file is empty.');
         }
 

@@ -216,6 +216,8 @@
         const questionRows = container.querySelector('[data-question-rows]');
         const addQuestionButtons = container.querySelectorAll('[data-add-question-row]');
         const importInput = document.querySelector('[data-question-import-input]');
+        const importText = document.querySelector('[data-question-import-text]');
+        const importTextButton = document.querySelector('[data-question-import-text-button]');
         const importFeedback = document.querySelector('[data-question-import-feedback]');
         const multipleChoiceType = @js(Question::TYPE_MULTIPLE_CHOICE);
         const fillInType = @js(Question::TYPE_FILL_IN);
@@ -605,6 +607,22 @@
                 importInput.value = '';
                 importInput.classList.add('is-invalid');
                 setImportFeedback(error instanceof Error ? error.message : 'Unable to read this question import file.', true);
+            }
+        });
+
+        importTextButton?.addEventListener('click', () => {
+            try {
+                const questions = parseImportedQuestions(importText?.value ?? '');
+
+                populateImportedQuestions(questions);
+                importText?.classList.remove('is-invalid');
+                if (importText) {
+                    importText.value = '';
+                }
+                setImportFeedback(`${questions.length} question${questions.length === 1 ? '' : 's'} loaded. Review or edit them below, then save the exam.`);
+            } catch (error) {
+                importText?.classList.add('is-invalid');
+                setImportFeedback(error instanceof Error ? error.message : 'Unable to read the pasted questions.', true);
             }
         });
     })();

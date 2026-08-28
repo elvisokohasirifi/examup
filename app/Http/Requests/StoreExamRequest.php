@@ -59,6 +59,7 @@ class StoreExamRequest extends FormRequest
             'is_published' => ['boolean'],
             'expires_at' => ['nullable', 'date', 'after:now'],
             'questions_import' => ['nullable', 'file', 'mimes:txt', 'max:1024'],
+            'questions_import_text' => ['nullable', 'string', 'max:1048576'],
             'questions' => ['required', 'array', 'min:1'],
             'questions.*.id' => ['nullable', 'uuid'],
             'questions.*.type' => ['required', Rule::in([Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_FILL_IN])],
@@ -85,6 +86,14 @@ class StoreExamRequest extends FormRequest
             } catch (InvalidArgumentException $exception) {
                 throw ValidationException::withMessages([
                     'questions_import' => $exception->getMessage(),
+                ]);
+            }
+        } elseif (filled($this->input('questions_import_text'))) {
+            try {
+                $questions = app(ImportExamQuestionsFromTextAction::class)->fromText($this->string('questions_import_text')->toString());
+            } catch (InvalidArgumentException $exception) {
+                throw ValidationException::withMessages([
+                    'questions_import_text' => $exception->getMessage(),
                 ]);
             }
         }

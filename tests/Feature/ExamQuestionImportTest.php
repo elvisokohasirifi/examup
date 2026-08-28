@@ -64,6 +64,45 @@ TEXT);
         ->and($exam->questions[1]->accepted_answers)->toBe(['Deoxyribonucleic Acid']);
 });
 
+test('admin can paste question text when creating an exam', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this
+        ->actingAs($admin)
+        ->post('/admin/exam', [
+            'title' => 'Pasted Questions Exam',
+            'display_mode' => 'all',
+            'allow_back_navigation' => 1,
+            'shuffle_questions' => 0,
+            'autosave_interval_seconds' => 15,
+            'show_score_to_student' => 0,
+            'show_correct_answers_to_student' => 0,
+            'show_index_number_field' => 0,
+            'disable_copy_paste' => 0,
+            'require_fullscreen' => 0,
+            'is_published' => 0,
+            'questions_import_text' => <<<'TEXT'
+TYPE: fill_in
+POINTS: 2
+PROMPT: What does CSS stand for?
+CORRECT:
+- Cascading Style Sheets
+TEXT,
+            'questions' => [],
+        ]);
+
+    $response->assertRedirect();
+
+    $exam = Exam::query()->with('questions')->where('title', 'Pasted Questions Exam')->firstOrFail();
+
+    expect($exam->questions)
+        ->toHaveCount(1)
+        ->and($exam->questions->sole()->prompt)
+        ->toBe('What does CSS stand for?')
+        ->and($exam->questions->sole()->accepted_answers)
+        ->toBe(['Cascading Style Sheets']);
+});
+
 test('admin can download the question import sample file', function () {
     $admin = User::factory()->admin()->create();
 
