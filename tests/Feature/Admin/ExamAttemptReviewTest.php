@@ -28,12 +28,14 @@ test('an exam owner can review a completed students answers, grading, and activi
     ]);
     $correctOption = QuestionOption::factory()->create([
         'question_id' => $question->id,
+        'position' => 1,
         'label' => 'Carbon dioxide',
         'value' => 'Carbon dioxide',
         'is_correct' => true,
     ]);
     QuestionOption::factory()->create([
         'question_id' => $question->id,
+        'position' => 2,
         'label' => 'Oxygen',
         'value' => 'Oxygen',
         'is_correct' => false,
@@ -92,6 +94,45 @@ test('an attempt cannot be reviewed through another exam', function () {
     $this->actingAs($admin)
         ->get(route('admin.exams.attempts.show', [$exam, $attempt]))
         ->assertNotFound();
+});
+
+test('an attempt review only shows the question-bank questions assigned to that student', function () {
+    $admin = User::factory()->admin()->create();
+    $exam = Exam::factory()->for($admin, 'creator')->create();
+    $accessLink = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $admin->id,
+    ]);
+    $assignedQuestion = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'position' => 1,
+        'prompt' => 'Assigned question',
+    ]);
+    $unassignedQuestion = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'position' => 2,
+        'prompt' => 'Unassigned question',
+    ]);
+    $attempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $accessLink->id,
+        'meta' => ['question_order' => [$assignedQuestion->id]],
+    ]);
+
+    ExamAnswer::factory()->create([
+        'exam_attempt_id' => $attempt->id,
+        'question_id' => $assignedQuestion->id,
+    ]);
+    ExamAnswer::factory()->create([
+        'exam_attempt_id' => $attempt->id,
+        'question_id' => $unassignedQuestion->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.exams.attempts.show', [$exam, $attempt]))
+        ->assertOk()
+        ->assertSee('Assigned question')
+        ->assertDontSee('Unassigned question');
 });
 
 test('the results page links completed attempts to their individual review page', function () {

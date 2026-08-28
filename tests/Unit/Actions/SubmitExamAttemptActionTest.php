@@ -112,3 +112,58 @@ test('it ignores extra spacing and casing for fill in answers', function () {
         ->and((float) $gradedAttempt->score_percentage)->toBe(100.0)
         ->and($gradedAttempt->answers->first()->is_correct)->toBeTrue();
 });
+
+test('it grades question bank attempts using only the selected question points', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create(['created_by' => $examiner->id]);
+    $selectedQuestion = Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 1,
+        'points' => 2,
+        'accepted_answers' => ['Correct'],
+    ]);
+    $incorrectQuestion = Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 2,
+        'points' => 3,
+        'accepted_answers' => ['Correct'],
+    ]);
+    $unselectedQuestion = Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 3,
+        'points' => 5,
+        'accepted_answers' => ['Correct'],
+    ]);
+    $attempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => ExamAccessLink::factory()->create([
+            'exam_id' => $exam->id,
+            'created_by' => $examiner->id,
+        ])->id,
+        'meta' => ['question_order' => [$selectedQuestion->id, $incorrectQuestion->id]],
+    ]);
+
+    ExamAnswer::factory()->create([
+        'exam_attempt_id' => $attempt->id,
+        'question_id' => $selectedQuestion->id,
+        'answer_text' => 'Correct',
+    ]);
+    ExamAnswer::factory()->create([
+        'exam_attempt_id' => $attempt->id,
+        'question_id' => $incorrectQuestion->id,
+        'answer_text' => 'Wrong',
+    ]);
+
+    $gradedAttempt = app(SubmitExamAttemptAction::class)->handle($attempt);
+
+    expect((float) $gradedAttempt->score)
+        ->toBe(2.0)
+        ->and((float) $gradedAttempt->max_score)
+        ->toBe(5.0)
+        ->and((float) $gradedAttempt->score_percentage)
+        ->toBe(40.0)
+        ->and($gradedAttempt->answers)
+        ->toHaveCount(2)
+        ->and($gradedAttempt->answers->pluck('question_id'))
+        ->not->toContain($unselectedQuestion->id);
+});

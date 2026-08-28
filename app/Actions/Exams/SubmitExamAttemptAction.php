@@ -24,10 +24,19 @@ class SubmitExamAttemptAction
             $attempt->load('exam.questions.options', 'answers');
 
             $answersByQuestion = $attempt->answers->keyBy('question_id');
+            $questionOrder = collect(data_get($attempt->meta, 'question_order', []))
+                ->filter(fn (mixed $questionId): bool => is_string($questionId) && $questionId !== '')
+                ->values();
+            $questions = $questionOrder->isEmpty()
+                ? $attempt->exam->questions
+                : $questionOrder
+                    ->map(fn (string $questionId): ?Question => $attempt->exam->questions->firstWhere('id', $questionId))
+                    ->filter()
+                    ->values();
             $totalScore = 0.0;
-            $maxScore = (float) $attempt->exam->questions->sum('points');
+            $maxScore = (float) $questions->sum('points');
 
-            foreach ($attempt->exam->questions as $question) {
+            foreach ($questions as $question) {
                 $answer = $answersByQuestion->get($question->id)
                     ?? new ExamAnswer([
                         'exam_attempt_id' => $attempt->id,

@@ -105,7 +105,7 @@
                         @endif
                         @if ($exam->show_correct_answers_to_student)
                             <div class="mt-4 space-y-4">
-                                @foreach ($attempt->answers as $answer)
+                                @foreach ($attempt->answers->whereIn('question_id', $this->questions->pluck('id')) as $answer)
                                     <div class="rounded-2xl bg-white p-4">
                                         <p class="font-semibold text-slate-900">{{ $answer->question?->prompt }}</p>
                                         @php

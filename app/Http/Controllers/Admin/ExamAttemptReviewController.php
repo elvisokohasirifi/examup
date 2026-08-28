@@ -19,12 +19,24 @@ class ExamAttemptReviewController extends Controller
             'suspiciousActivities',
         ]);
 
+        $allQuestions = $exam->questions()
+            ->with('options')
+            ->get()
+            ->keyBy('id');
+        $questionOrder = collect(data_get($attempt->meta, 'question_order', []))
+            ->filter(fn (mixed $questionId): bool => is_string($questionId) && $questionId !== '')
+            ->values();
+        $questions = $questionOrder->isEmpty()
+            ? $allQuestions->values()
+            : $questionOrder
+                ->map(fn (string $questionId) => $allQuestions->get($questionId))
+                ->filter()
+                ->values();
+
         return view('admin.exams.attempt-show', [
             'exam' => $exam,
             'attempt' => $attempt,
-            'questions' => $exam->questions()
-                ->with('options')
-                ->get(),
+            'questions' => $questions,
             'answersByQuestion' => $attempt->answers->keyBy('question_id'),
         ]);
     }
