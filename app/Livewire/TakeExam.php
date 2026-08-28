@@ -143,7 +143,11 @@ class TakeExam extends Component
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
         $this->rememberAttempt();
-        $this->dispatch('exam-attempt-started', attemptId: $this->attempt->id);
+        $this->dispatch(
+            'exam-attempt-started',
+            attemptId: $this->attempt->id,
+            expiresAt: $this->attempt->expires_at?->toIso8601String(),
+        );
     }
 
     public function resumeAttempt(): void
@@ -175,7 +179,11 @@ class TakeExam extends Component
         $this->resumableAttempt = null;
         $this->rememberAttempt();
         $this->restoreAttemptState();
-        $this->dispatch('exam-attempt-started', attemptId: $this->attempt->id);
+        $this->dispatch(
+            'exam-attempt-started',
+            attemptId: $this->attempt->id,
+            expiresAt: $this->attempt->expires_at?->toIso8601String(),
+        );
     }
 
     public function startNewAttempt(): void

@@ -66,6 +66,31 @@ test('student can start and submit an exam from a secure link', function () {
         ->assertSee('1 / 1');
 });
 
+test('a timed exam exposes its expiry to the browser countdown', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'time_limit_minutes' => 30,
+        'require_fullscreen' => false,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertDispatched('exam-attempt-started');
+
+    expect($component->get('attempt.expires_at'))->not->toBeNull();
+});
+
 test('multiple-choice selections are tracked independently for each option', function () {
     $examiner = User::factory()->create();
 

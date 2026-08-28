@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -24,7 +24,7 @@
                 <div class="rounded-2xl bg-slate-950 px-4 py-3 text-sm text-white">
                     <div class="font-semibold">Status: {{ str_replace('_', ' ', $attempt->status) }}</div>
                     @if ($this->timeRemaining !== null && ! $attempt->isFinished())
-                        <div class="text-amber-300">Time remaining: {{ gmdate('H:i:s', $this->timeRemaining) }}</div>
+                        <div x-show="timeRemaining !== null" class="text-amber-300">Time remaining: <span x-text="formatDuration(timeRemaining)">{{ gmdate('H:i:s', $this->timeRemaining) }}</span></div>
                     @endif
                 </div>
             @endif

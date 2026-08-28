@@ -14,12 +14,17 @@
         window.examActivityMonitor = (options = {}) => ({
             disableCopyPaste: options.disableCopyPaste ?? false,
             requireFullscreen: options.requireFullscreen ?? false,
+            expiresAt: options.expiresAt ?? null,
             lastReportedAt: 0,
+            countdownInterval: null,
             fullscreenExitTimeout: null,
             fullscreenExitInterval: null,
             secondsUntilFullscreenSubmission: 0,
+            timeRemaining: null,
 
             init() {
+                this.setExamCountdown(this.expiresAt);
+
                 this.onVisibilityChange = () => {
                     if (document.hidden) {
                         this.report('tab_hidden');
@@ -55,12 +60,16 @@
                     this.report('fullscreen_exit', true);
                     this.startFullscreenExitCountdown();
                 };
+                this.onExamAttemptStarted = ({ detail }) => {
+                    this.setExamCountdown(detail.expiresAt ?? null);
+                };
 
                 document.addEventListener('visibilitychange', this.onVisibilityChange);
                 window.addEventListener('blur', this.onWindowBlur);
                 document.addEventListener('copy', this.onCopy);
                 document.addEventListener('paste', this.onPaste);
                 document.addEventListener('fullscreenchange', this.onFullscreenChange);
+                window.addEventListener('exam-attempt-started', this.onExamAttemptStarted);
             },
 
             destroy() {
@@ -69,7 +78,51 @@
                 document.removeEventListener('copy', this.onCopy);
                 document.removeEventListener('paste', this.onPaste);
                 document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+                window.removeEventListener('exam-attempt-started', this.onExamAttemptStarted);
+                this.clearExamCountdown();
                 this.clearFullscreenExitCountdown();
+            },
+
+            setExamCountdown(expiresAt) {
+                this.clearExamCountdown();
+                this.expiresAt = expiresAt;
+
+                if (!expiresAt) {
+                    return;
+                }
+
+                const expiresAtTimestamp = new Date(expiresAt).getTime();
+
+                if (Number.isNaN(expiresAtTimestamp)) {
+                    return;
+                }
+
+                const updateCountdown = () => {
+                    this.timeRemaining = Math.max(0, Math.ceil((expiresAtTimestamp - Date.now()) / 1000));
+                };
+
+                updateCountdown();
+                this.countdownInterval = window.setInterval(updateCountdown, 250);
+            },
+
+            clearExamCountdown() {
+                if (this.countdownInterval !== null) {
+                    window.clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                }
+
+                this.timeRemaining = null;
+            },
+
+            formatDuration(seconds) {
+                const totalSeconds = Math.max(0, Number(seconds) || 0);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const remainingSeconds = totalSeconds % 60;
+
+                return [hours, minutes, remainingSeconds]
+                    .map((value) => String(value).padStart(2, '0'))
+                    .join(':');
             },
 
             handleClipboardEvent(event, eventType) {
@@ -150,10 +203,13 @@
         });
 
         document.addEventListener('livewire:init', () => {
-            Livewire.on('exam-attempt-started', ({ attemptId }) => {
+            Livewire.on('exam-attempt-started', ({ attemptId, expiresAt }) => {
                 const url = new URL(window.location.href);
                 url.searchParams.set('attempt', attemptId);
                 window.history.replaceState({}, '', url);
+                window.dispatchEvent(new CustomEvent('exam-attempt-started', {
+                    detail: { attemptId, expiresAt },
+                }));
             });
 
             Livewire.interceptRequest(({ onError }) => {
