@@ -12,7 +12,13 @@
                 <h2 class="mb-2">{{ $exam->title }} results</h2>
                 <p class="mb-0 text-muted">Performance summary for completed attempts.</p>
             </div>
-            <a class="btn btn-outline-primary" href="{{ route('admin.exams.csv', $exam) }}">Download CSV results</a>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="POST" action="{{ route('admin.exams.regrade', $exam) }}" onsubmit="return confirm('Regrade all completed attempts using the current answer key? Student responses will not change.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-warning">Regrade completed attempts</button>
+                </form>
+                <a class="btn btn-outline-primary" href="{{ route('admin.exams.csv', $exam) }}">Download CSV results</a>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">

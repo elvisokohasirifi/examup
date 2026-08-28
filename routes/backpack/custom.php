@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ExamAttemptCsvController;
 use App\Http\Controllers\Admin\ExamAttemptReviewController;
 use App\Http\Controllers\Admin\ExamCrudController;
 use App\Http\Controllers\Admin\ExamResultsController;
+use App\Http\Controllers\Admin\RegradeExamAttemptsController;
 use Illuminate\Support\Facades\Route;
 
 // --------------------------
@@ -40,6 +41,7 @@ Route::group([
         ->name('admin.exams.access.destroy');
     Route::get('exams/{exam}/preview', [ExamCrudController::class, 'preview'])->name('admin.exams.preview');
     Route::get('exams/{exam}/results', ExamResultsController::class)->name('admin.exams.results');
+    Route::post('exams/{exam}/results/regrade', RegradeExamAttemptsController::class)->name('admin.exams.regrade');
     Route::get('exams/{exam}/attempts/{attempt}', ExamAttemptReviewController::class)
         ->scopeBindings()
         ->name('admin.exams.attempts.show');

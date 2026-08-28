@@ -21,40 +21,7 @@ class SubmitExamAttemptAction
                 return $attempt->load(['exam', 'answers.question.options']);
             }
 
-            $attempt->load('exam.questions.options', 'answers');
-
-            $answersByQuestion = $attempt->answers->keyBy('question_id');
-            $questionOrder = collect(data_get($attempt->meta, 'question_order', []))
-                ->filter(fn (mixed $questionId): bool => is_string($questionId) && $questionId !== '')
-                ->values();
-            $questions = $questionOrder->isEmpty()
-                ? $attempt->exam->questions
-                : $questionOrder
-                    ->map(fn (string $questionId): ?Question => $attempt->exam->questions->firstWhere('id', $questionId))
-                    ->filter()
-                    ->values();
-            $totalScore = 0.0;
-            $maxScore = (float) $questions->sum('points');
-
-            foreach ($questions as $question) {
-                $answer = $answersByQuestion->get($question->id)
-                    ?? new ExamAnswer([
-                        'exam_attempt_id' => $attempt->id,
-                        'question_id' => $question->id,
-                    ]);
-
-                [$isCorrect, $score, $gradedPayload] = $this->gradeQuestion($question, $answer);
-
-                $answer->fill([
-                    'is_correct' => $isCorrect,
-                    'score' => $score,
-                    'graded_payload' => $gradedPayload,
-                    'answered_at' => $answer->answered_at ?? now(),
-                ]);
-                $answer->save();
-
-                $totalScore += $score;
-            }
+            [$totalScore, $maxScore] = $this->gradeAttempt($attempt);
 
             $startedAt = $attempt->started_at ?? $attempt->created_at;
             $submittedAt = now();
@@ -71,6 +38,72 @@ class SubmitExamAttemptAction
 
             return $attempt->fresh(['exam', 'answers.question.options']);
         }, 3);
+    }
+
+    public function regrade(ExamAttempt $attempt): ExamAttempt
+    {
+        return DB::transaction(function () use ($attempt): ExamAttempt {
+            $attempt = ExamAttempt::query()
+                ->lockForUpdate()
+                ->findOrFail($attempt->id);
+
+            if (! $attempt->isFinished()) {
+                return $attempt->load(['exam', 'answers.question.options']);
+            }
+
+            [$totalScore, $maxScore] = $this->gradeAttempt($attempt);
+
+            $attempt->update([
+                'score' => $totalScore,
+                'max_score' => $maxScore,
+                'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
+            ]);
+
+            return $attempt->fresh(['exam', 'answers.question.options']);
+        }, 3);
+    }
+
+    /**
+     * @return array{0: float, 1: float}
+     */
+    private function gradeAttempt(ExamAttempt $attempt): array
+    {
+        $attempt->load('exam.questions.options', 'answers');
+
+        $answersByQuestion = $attempt->answers->keyBy('question_id');
+        $questionOrder = collect(data_get($attempt->meta, 'question_order', []))
+            ->filter(fn (mixed $questionId): bool => is_string($questionId) && $questionId !== '')
+            ->values();
+        $questions = $questionOrder->isEmpty()
+            ? $attempt->exam->questions
+            : $questionOrder
+                ->map(fn (string $questionId): ?Question => $attempt->exam->questions->firstWhere('id', $questionId))
+                ->filter()
+                ->values();
+        $totalScore = 0.0;
+        $maxScore = (float) $questions->sum('points');
+
+        foreach ($questions as $question) {
+            $answer = $answersByQuestion->get($question->id)
+                ?? new ExamAnswer([
+                    'exam_attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                ]);
+
+            [$isCorrect, $score, $gradedPayload] = $this->gradeQuestion($question, $answer);
+
+            $answer->fill([
+                'is_correct' => $isCorrect,
+                'score' => $score,
+                'graded_payload' => $gradedPayload,
+                'answered_at' => $answer->answered_at ?? now(),
+            ]);
+            $answer->save();
+
+            $totalScore += $score;
+        }
+
+        return [$totalScore, $maxScore];
     }
 
     /**
