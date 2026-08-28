@@ -208,6 +208,19 @@
                         </section>
                     @endforeach
 
+                    @if ($showFullscreenExitWarning)
+                        <div class="fixed inset-0 z-[60] grid place-items-center bg-red-950/55 px-4" role="alertdialog" aria-modal="true" aria-labelledby="fullscreen-exit-title">
+                            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Fullscreen required</p>
+                                <h2 id="fullscreen-exit-title" class="mt-2 text-2xl font-semibold text-slate-900">You left fullscreen mode.</h2>
+                                <p class="mt-3 text-sm leading-6 text-slate-600">Return to fullscreen now to continue. Your exam will be automatically submitted in <span class="font-semibold text-red-700" x-text="secondsUntilFullscreenSubmission">15</span> seconds.</p>
+                                <div class="mt-6 flex justify-end">
+                                    <button type="button" x-on:click="returnToFullscreen()" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Return to fullscreen</button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     @if ($showSubmitConfirmation)
                         <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
                             <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">

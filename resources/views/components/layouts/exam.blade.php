@@ -15,6 +15,9 @@
             disableCopyPaste: options.disableCopyPaste ?? false,
             requireFullscreen: options.requireFullscreen ?? false,
             lastReportedAt: 0,
+            fullscreenExitTimeout: null,
+            fullscreenExitInterval: null,
+            secondsUntilFullscreenSubmission: 0,
 
             init() {
                 this.onVisibilityChange = () => {
@@ -33,14 +36,24 @@
 
                 this.onCopy = (event) => this.handleClipboardEvent(event, 'copy');
                 this.onPaste = (event) => this.handleClipboardEvent(event, 'paste');
-                this.onFullscreenChange = () => {
+                this.onFullscreenChange = async () => {
                     const isFullscreen = Boolean(document.fullscreenElement);
 
-                    this.$wire.$set('fullscreenConfirmed', isFullscreen);
+                    await this.$wire.$set('fullscreenConfirmed', isFullscreen);
 
-                    if (this.requireFullscreen && !isFullscreen) {
-                        this.report('fullscreen_exit');
+                    if (!this.requireFullscreen) {
+                        return;
                     }
+
+                    if (isFullscreen) {
+                        this.clearFullscreenExitCountdown();
+                        await this.$wire.dismissFullscreenExitWarning();
+
+                        return;
+                    }
+
+                    this.report('fullscreen_exit', true);
+                    this.startFullscreenExitCountdown();
                 };
 
                 document.addEventListener('visibilitychange', this.onVisibilityChange);
@@ -56,6 +69,7 @@
                 document.removeEventListener('copy', this.onCopy);
                 document.removeEventListener('paste', this.onPaste);
                 document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+                this.clearFullscreenExitCountdown();
             },
 
             handleClipboardEvent(event, eventType) {
@@ -90,13 +104,48 @@
                 await this.$wire.$set('fullscreenConfirmed', Boolean(document.fullscreenElement));
             },
 
-            report(eventType) {
-                if (Date.now() - this.lastReportedAt < 10000) {
+            async returnToFullscreen() {
+                await this.enterFullscreenIfRequired();
+
+                if (document.fullscreenElement) {
+                    this.clearFullscreenExitCountdown();
+                    await this.$wire.dismissFullscreenExitWarning();
+                }
+            },
+
+            startFullscreenExitCountdown() {
+                this.clearFullscreenExitCountdown();
+                this.secondsUntilFullscreenSubmission = 15;
+                this.fullscreenExitInterval = window.setInterval(() => {
+                    this.secondsUntilFullscreenSubmission = Math.max(this.secondsUntilFullscreenSubmission - 1, 0);
+                }, 1000);
+                this.fullscreenExitTimeout = window.setTimeout(() => {
+                    this.clearFullscreenExitCountdown();
+                    this.$wire.submitForFullscreenExit();
+                }, 15000);
+            },
+
+            clearFullscreenExitCountdown() {
+                if (this.fullscreenExitTimeout !== null) {
+                    window.clearTimeout(this.fullscreenExitTimeout);
+                    this.fullscreenExitTimeout = null;
+                }
+
+                if (this.fullscreenExitInterval !== null) {
+                    window.clearInterval(this.fullscreenExitInterval);
+                    this.fullscreenExitInterval = null;
+                }
+
+                this.secondsUntilFullscreenSubmission = 0;
+            },
+
+            report(eventType, bypassCooldown = false) {
+                if (!bypassCooldown && Date.now() - this.lastReportedAt < 10000) {
                     return;
                 }
 
                 this.lastReportedAt = Date.now();
-                this.$wire.logClientEvent(eventType).catch(() => {});
+                return this.$wire.logClientEvent(eventType).catch(() => {});
             },
         });
 

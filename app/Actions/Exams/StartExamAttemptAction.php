@@ -23,7 +23,12 @@ class StartExamAttemptAction
         $exam = $accessLink->exam()->with('questions')->firstOrFail();
         $orderedQuestions = $exam->questions->sortBy('position')->values();
 
-        if ($exam->shuffle_questions) {
+        if ($exam->questions_per_attempt !== null) {
+            $orderedQuestions = $orderedQuestions
+                ->shuffle()
+                ->take($exam->questions_per_attempt)
+                ->values();
+        } elseif ($exam->shuffle_questions) {
             $orderedQuestions = $orderedQuestions->shuffle()->values();
         }
 

@@ -41,6 +41,8 @@ class TakeExam extends Component
 
     public bool $showSubmitConfirmation = false;
 
+    public bool $showFullscreenExitWarning = false;
+
     public bool $isUnavailable = false;
 
     public string $unavailableMessage = '';
@@ -97,6 +99,8 @@ class TakeExam extends Component
             return;
         }
 
+        $this->normalizeCandidateDetails();
+
         if (! $this->ensureExamIsAvailable()) {
             return;
         }
@@ -147,6 +151,8 @@ class TakeExam extends Component
         if ($this->resumableAttempt === null) {
             return;
         }
+
+        $this->normalizeCandidateDetails();
 
         $this->validate([
             'candidate.student_email' => $this->studentEmailRules(),
@@ -256,6 +262,20 @@ class TakeExam extends Component
         $this->showSubmitConfirmation = false;
     }
 
+    public function dismissFullscreenExitWarning(): void
+    {
+        $this->showFullscreenExitWarning = false;
+    }
+
+    public function submitForFullscreenExit(SubmitExamAttemptAction $submitExamAttempt): void
+    {
+        if (! $this->showFullscreenExitWarning) {
+            return;
+        }
+
+        $this->submitExam($submitExamAttempt, true);
+    }
+
     public function submitExam(SubmitExamAttemptAction $submitExamAttempt, bool $automatic = false): void
     {
         if ($this->attempt === null || $this->attempt->isFinished()) {
@@ -303,6 +323,10 @@ class TakeExam extends Component
                 'captured_at' => now()->toIso8601String(),
             ],
         ]);
+
+        if ($eventType === 'fullscreen_exit' && $this->exam->require_fullscreen && ! $this->attempt->isFinished()) {
+            $this->showFullscreenExitWarning = true;
+        }
     }
 
     public function getQuestionsProperty(): Collection
@@ -445,6 +469,19 @@ class TakeExam extends Component
     {
         return Str::of($answer)
             ->squish()
+            ->toString();
+    }
+
+    private function normalizeCandidateDetails(): void
+    {
+        $this->candidate['student_name'] = Str::of($this->candidate['student_name'] ?? '')
+            ->squish()
+            ->toString();
+        $this->candidate['student_email'] = Str::of($this->candidate['student_email'] ?? '')
+            ->trim()
+            ->toString();
+        $this->candidate['student_index_number'] = Str::of($this->candidate['student_index_number'] ?? '')
+            ->trim()
             ->toString();
     }
 

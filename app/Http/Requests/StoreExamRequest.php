@@ -48,6 +48,7 @@ class StoreExamRequest extends FormRequest
             'display_mode' => ['required', Rule::in(['all', 'one_at_a_time'])],
             'allow_back_navigation' => ['boolean'],
             'shuffle_questions' => ['boolean'],
+            'questions_per_attempt' => ['nullable', 'integer', 'min:1'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
             'autosave_interval_seconds' => ['required', 'integer', 'min:5', 'max:300'],
             'show_score_to_student' => ['boolean'],
@@ -156,6 +157,13 @@ class StoreExamRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
+                $questionsPerAttempt = $this->integer('questions_per_attempt');
+                $questionCount = count($this->input('questions', []));
+
+                if ($questionsPerAttempt > $questionCount) {
+                    $validator->errors()->add('questions_per_attempt', 'Questions shown per attempt cannot exceed the number of questions in the pool.');
+                }
+
                 foreach ($this->input('questions', []) as $index => $question) {
                     $questionNumber = $index + 1;
 

@@ -48,6 +48,7 @@ class ExamCrudController extends CrudController
         CRUD::column('display_mode')->type('text');
         CRUD::column('allow_back_navigation')->type('boolean')->label('Back nav');
         CRUD::column('shuffle_questions')->type('boolean')->label('Shuffle');
+        CRUD::column('questions_per_attempt')->type('number')->label('Per attempt');
         CRUD::column('time_limit_minutes')->type('number')->label('Minutes');
         CRUD::column('expires_at')->type('datetime')->label('Expires at');
         CRUD::addColumn([
@@ -92,6 +93,7 @@ class ExamCrudController extends CrudController
         CRUD::column('display_mode');
         CRUD::column('allow_back_navigation')->type('boolean');
         CRUD::column('shuffle_questions')->type('boolean');
+        CRUD::column('questions_per_attempt')->type('number')->label('Questions per attempt');
         CRUD::column('time_limit_minutes');
         CRUD::column('autosave_interval_seconds');
         CRUD::column('expires_at')->type('datetime');
@@ -209,6 +211,12 @@ class ExamCrudController extends CrudController
             'default' => 0,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
+        CRUD::field('questions_per_attempt')
+            ->type('number')
+            ->label('Questions shown per attempt')
+            ->hint('Leave blank to show every question. When set, students receive a random selection from this exam\'s question pool.')
+            ->attributes(['min' => 1])
+            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('time_limit_minutes')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('autosave_interval_seconds')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('expires_at')->type('datetime')->label('Exam expires at')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);

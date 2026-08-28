@@ -186,6 +186,28 @@ test('student names only allow letters and common name punctuation', function ()
         ->assertHasErrors(['candidate.student_name']);
 });
 
+test('student details are trimmed before validation and starting an exam', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', '  Student   One  ')
+        ->set('candidate.student_email', '  student@example.com  ')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertSet('attempt.student_name', 'Student One')
+        ->assertSet('attempt.student_email', 'student@example.com');
+});
+
 test('fullscreen is required before a student can start a fullscreen exam', function () {
     $examiner = User::factory()->create();
     $exam = Exam::factory()->create([
@@ -209,6 +231,37 @@ test('fullscreen is required before a student can start a fullscreen exam', func
         ->set('fullscreenConfirmed', true)
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->assertSet('attempt.student_email', 'student@example.com');
+});
+
+test('leaving fullscreen warns the student and auto-submits the attempt', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'require_fullscreen' => true,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->set('fullscreenConfirmed', true)
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('logClientEvent', 'fullscreen_exit')
+        ->assertSet('showFullscreenExitWarning', true)
+        ->call('submitForFullscreenExit', app(SubmitExamAttemptAction::class))
+        ->assertSet('submitted', true);
+
+    $this->assertDatabaseHas('exam_attempts', [
+        'id' => $component->get('attempt.id'),
+        'status' => ExamAttempt::STATUS_AUTO_SUBMITTED,
+    ]);
 });
 
 test('a shared link blocks a student email that has already completed the exam', function () {
@@ -339,6 +392,44 @@ test('shuffled exams persist a question order for each attempt', function () {
         ->toHaveCount(3)
         ->and(collect($attempt->meta['question_order'])->sort()->values()->all())
         ->toBe($questions->pluck('id')->sort()->values()->all());
+});
+
+test('question banks randomly select and persist the configured number of questions per attempt', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'questions_per_attempt' => 2,
+        'shuffle_questions' => false,
+        'show_index_number_field' => false,
+    ]);
+    $questions = Question::factory()->count(4)->sequence(
+        ['exam_id' => $exam->id, 'position' => 1, 'points' => 1],
+        ['exam_id' => $exam->id, 'position' => 2, 'points' => 2],
+        ['exam_id' => $exam->id, 'position' => 3, 'points' => 3],
+        ['exam_id' => $exam->id, 'position' => 4, 'points' => 4],
+    )->create();
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class));
+
+    $attempt = ExamAttempt::query()->findOrFail($component->get('attempt.id'));
+    $selectedQuestionIds = $attempt->meta['question_order'] ?? [];
+
+    expect($selectedQuestionIds)
+        ->toHaveCount(2)
+        ->and(collect($selectedQuestionIds)->diff($questions->pluck('id')))
+        ->toBeEmpty()
+        ->and((float) $attempt->max_score)
+        ->toBe((float) $questions->whereIn('id', $selectedQuestionIds)->sum('points'));
 });
 
 test('expired exams show an unavailable message instead of a forbidden response', function () {
