@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()) })" x-on:exam-navigation-confirmed.window="leaveExam()" x-on:exam-submitted.window="disableHistoryGuard()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -16,7 +16,7 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Online Exam</p>
                 <h1 class="font-serif text-3xl text-slate-900">{{ $exam->title }}</h1>
                 @if ($exam->description)
-                    <p class="max-w-3xl text-sm leading-6 text-slate-600">{{ $exam->description }}</p>
+                    <p class="max-w-3xl whitespace-pre-line text-sm leading-6 text-slate-600">{{ $exam->description }}</p>
                 @endif
             </div>
 
@@ -36,7 +36,7 @@
                     <h2 class="text-xl font-semibold text-slate-900">Before you begin</h2>
                     <div class="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                         @if ($exam->instructions)
-                            <p>{{ $exam->instructions }}</p>
+                            <p class="whitespace-pre-line">{{ $exam->instructions }}</p>
                         @endif
                         <p>Questions: {{ $this->questionsShownToCandidate }}</p>
                         <p>Display: {{ $exam->display_mode === 'all' ? 'All questions at once' : 'One question at a time' }}</p>
@@ -218,7 +218,7 @@
     </div>
 
     @if ($showFullscreenExitWarning)
-        <div class="fixed inset-0 z-[60] grid place-items-center bg-red-950/55 px-4" role="alertdialog" aria-modal="true" aria-labelledby="fullscreen-exit-title">
+        <div class="z-[60] bg-red-950/55 px-4 py-6" style="position: fixed; inset: 0; display: flex; min-height: 100dvh; width: 100vw; align-items: center; justify-content: center;" role="alertdialog" aria-modal="true" aria-labelledby="fullscreen-exit-title">
             <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
                 @if ($fullscreenUnsupported)
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Exam monitoring alert</p>
@@ -237,7 +237,7 @@
     @endif
 
     @if ($showSubmitConfirmation)
-        <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
+        <div class="z-50 bg-slate-950/45 px-4 py-6" style="position: fixed; inset: 0; display: flex; min-height: 100dvh; width: 100vw; align-items: center; justify-content: center;" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
             <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Final check</p>
                 <h2 id="submit-confirmation-title" class="mt-2 text-2xl font-semibold text-slate-900">Submit your exam?</h2>
@@ -245,6 +245,20 @@
                 <div class="mt-6 flex flex-wrap justify-end gap-3">
                     <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
                     <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Yes, submit exam</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($showNavigationWarning)
+        <div class="z-[70] bg-slate-950/60 px-4 py-6" style="position: fixed; inset: 0; display: flex; min-height: 100dvh; width: 100vw; align-items: center; justify-content: center;" role="alertdialog" aria-modal="true" aria-labelledby="navigation-warning-title">
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Exam in progress</p>
+                <h2 id="navigation-warning-title" class="mt-2 text-2xl font-semibold text-slate-900">Leave this exam?</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-600">Your answers are saved, but leaving may disrupt your exam. You can return using the same link to resume if time remains.</p>
+                <div class="mt-6 flex flex-wrap justify-end gap-3">
+                    <button type="button" wire:click="cancelNavigationWarning" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Stay on exam</button>
+                    <button type="button" wire:click="confirmNavigationAway" class="rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-50">Leave exam</button>
                 </div>
             </div>
         </div>

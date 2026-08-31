@@ -23,6 +23,9 @@
             fullscreenExitInterval: null,
             secondsUntilFullscreenSubmission: 0,
             timeRemaining: null,
+            examUrl: window.location.href,
+            historyGuardEnabled: false,
+            isLeavingExam: false,
 
             init() {
                 this.setExamCountdown(this.expiresAt);
@@ -68,6 +71,15 @@
                 this.onExamAttemptStarted = ({ detail }) => {
                     this.attemptActive = true;
                     this.setExamCountdown(detail.expiresAt ?? null);
+                    this.enableHistoryGuard();
+                };
+                this.onPopState = () => {
+                    if (!this.historyGuardEnabled || this.isLeavingExam) {
+                        return;
+                    }
+
+                    window.history.pushState({ examNavigationGuard: true }, '', this.examUrl);
+                    this.$wire.warnBeforeLeaving();
                 };
 
                 document.addEventListener('visibilitychange', this.onVisibilityChange);
@@ -76,6 +88,11 @@
                 document.addEventListener('paste', this.onPaste);
                 document.addEventListener('fullscreenchange', this.onFullscreenChange);
                 window.addEventListener('exam-attempt-started', this.onExamAttemptStarted);
+                window.addEventListener('popstate', this.onPopState);
+
+                if (this.attemptActive) {
+                    this.enableHistoryGuard();
+                }
             },
 
             destroy() {
@@ -85,8 +102,30 @@
                 document.removeEventListener('paste', this.onPaste);
                 document.removeEventListener('fullscreenchange', this.onFullscreenChange);
                 window.removeEventListener('exam-attempt-started', this.onExamAttemptStarted);
+                window.removeEventListener('popstate', this.onPopState);
                 this.clearExamCountdown();
                 this.clearFullscreenExitCountdown();
+            },
+
+            enableHistoryGuard() {
+                if (this.historyGuardEnabled) {
+                    return;
+                }
+
+                window.history.replaceState({ ...window.history.state, examNavigationGuard: true }, '', this.examUrl);
+                window.history.pushState({ examNavigationGuard: true }, '', this.examUrl);
+                this.historyGuardEnabled = true;
+            },
+
+            disableHistoryGuard() {
+                this.attemptActive = false;
+                this.historyGuardEnabled = false;
+            },
+
+            leaveExam() {
+                this.isLeavingExam = true;
+                this.historyGuardEnabled = false;
+                window.history.go(-2);
             },
 
             setExamCountdown(expiresAt) {

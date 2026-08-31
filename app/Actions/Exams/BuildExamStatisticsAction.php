@@ -15,6 +15,7 @@ class BuildExamStatisticsAction
 
         $attempts = $exam->attempts
             ->whereIn('status', ['submitted', 'auto_submitted'])
+            ->whereNull('superseded_at')
             ->reject(fn ($attempt) => $attempt->accessLink?->isPreview())
             ->values();
 

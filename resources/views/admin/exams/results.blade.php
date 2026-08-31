@@ -84,6 +84,12 @@
                                     <td class="text-end">
                                         @if ($attempt->isFinished())
                                             <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.exams.attempts.show', [$exam, $attempt]) }}">View completed exam</a>
+                                            @if (! $attempt->isSuperseded())
+                                                <form method="POST" action="{{ route('admin.exams.attempts.retake', [$exam, $attempt]) }}" class="d-inline" onsubmit="return confirm('Email this student a new one-time retake link? Their current result will remain until they submit the retake.');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Allow retake</button>
+                                                </form>
+                                            @endif
                                         @else
                                             <span class="text-muted">Not completed</span>
                                         @endif

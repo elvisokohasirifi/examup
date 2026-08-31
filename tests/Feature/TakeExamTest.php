@@ -23,6 +23,8 @@ test('student can start and submit an exam from a secure link', function () {
     $exam = Exam::factory()->create([
         'created_by' => $examiner->id,
         'display_mode' => 'all',
+        'description' => "First description line\nSecond description line",
+        'instructions' => "First instruction line\nSecond instruction line",
         'show_score_to_student' => true,
         'show_correct_answers_to_student' => true,
         'show_index_number_field' => true,
@@ -51,6 +53,7 @@ test('student can start and submit an exam from a secure link', function () {
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])
+        ->assertSee('whitespace-pre-line', false)
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->set('candidate.student_index_number', 'IDX-001')
@@ -64,6 +67,36 @@ test('student can start and submit an exam from a secure link', function () {
         ->assertSee('Exam submitted')
         ->assertSee('Your answer: Correct option')
         ->assertSee('1 / 1');
+});
+
+test('an active exam warns the student before browser back navigation', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('warnBeforeLeaving')
+        ->assertSet('showNavigationWarning', true)
+        ->assertSee('Leave this exam?')
+        ->assertSee('Stay on exam')
+        ->assertSee('Leave exam')
+        ->call('confirmNavigationAway')
+        ->assertSet('showNavigationWarning', false)
+        ->assertDispatched('exam-navigation-confirmed');
+
+    expect(SuspiciousActivity::query()->where('event_type', 'browser_back')->exists())->toBeTrue();
 });
 
 test('a timed exam exposes its expiry to the browser countdown', function () {

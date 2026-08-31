@@ -62,6 +62,7 @@ class ExamCrudController extends CrudController
             'label' => 'Attempts',
             'type' => 'closure',
             'function' => fn (Exam $exam) => $exam->attempts()
+                ->current()
                 ->whereHas('accessLink', fn ($query) => $query->where(function ($nestedQuery) {
                     $nestedQuery->whereNull('meta')
                         ->orWhere('meta->is_preview', false)

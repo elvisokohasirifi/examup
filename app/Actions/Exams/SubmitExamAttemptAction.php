@@ -36,6 +36,8 @@ class SubmitExamAttemptAction
                 'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
             ]);
 
+            $this->supersedeReplacedAttempt($attempt);
+
             return $attempt->fresh(['exam', 'answers.question.options']);
         }, 3);
     }
@@ -104,6 +106,25 @@ class SubmitExamAttemptAction
         }
 
         return [$totalScore, $maxScore];
+    }
+
+    private function supersedeReplacedAttempt(ExamAttempt $attempt): void
+    {
+        $replacedAttemptId = data_get($attempt->accessLink?->meta, 'retake_for_attempt_id');
+
+        if (! is_string($replacedAttemptId) || $replacedAttemptId === '') {
+            return;
+        }
+
+        ExamAttempt::query()
+            ->lockForUpdate()
+            ->whereKey($replacedAttemptId)
+            ->where('exam_id', $attempt->exam_id)
+            ->whereNull('superseded_at')
+            ->update([
+                'superseded_at' => now(),
+                'superseded_by_attempt_id' => $attempt->id,
+            ]);
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\Concerns\LogsModelActivity;
 use App\Models\Concerns\UsesUuid;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Database\Factories\ExamAttemptFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -37,6 +38,8 @@ class ExamAttempt extends Model
         'access_token_hash',
         'started_at',
         'submitted_at',
+        'superseded_at',
+        'superseded_by_attempt_id',
         'expires_at',
         'auto_submitted_at',
         'duration_seconds',
@@ -53,6 +56,7 @@ class ExamAttempt extends Model
         return [
             'started_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'superseded_at' => 'datetime',
             'expires_at' => 'datetime',
             'auto_submitted_at' => 'datetime',
             'duration_seconds' => 'integer',
@@ -86,6 +90,16 @@ class ExamAttempt extends Model
     public function isFinished(): bool
     {
         return in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_AUTO_SUBMITTED], true);
+    }
+
+    public function isSuperseded(): bool
+    {
+        return $this->superseded_at !== null;
+    }
+
+    public function scopeCurrent(Builder $query): void
+    {
+        $query->whereNull('superseded_at');
     }
 
     public function formattedScore(): string

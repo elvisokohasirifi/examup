@@ -42,7 +42,9 @@ class ExamAttemptCsvController extends Controller
 
             fputcsv($handle, $columns);
 
-            foreach ($exam->attempts->reject(fn ($attempt) => $attempt->accessLink?->isPreview()) as $attempt) {
+            foreach ($exam->attempts
+                ->whereNull('superseded_at')
+                ->reject(fn ($attempt) => $attempt->accessLink?->isPreview()) as $attempt) {
                 $row = [
                     $attempt->student_name,
                     $attempt->student_email,

@@ -14,6 +14,7 @@ class ExamResultsController extends Controller
         abort_unless(backpack_user()->can('view', $exam), 403);
 
         $attempts = $exam->attempts()
+            ->current()
             ->with('accessLink')
             ->withCount('suspiciousActivities')
             ->whereHas('accessLink', fn ($query) => $query->where(function ($nestedQuery) {

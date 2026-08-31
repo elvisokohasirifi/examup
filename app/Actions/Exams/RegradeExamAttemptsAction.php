@@ -14,6 +14,7 @@ class RegradeExamAttemptsAction
         $regradedAttempts = 0;
 
         $exam->attempts()
+            ->current()
             ->whereIn('status', [ExamAttempt::STATUS_SUBMITTED, ExamAttempt::STATUS_AUTO_SUBMITTED])
             ->where(function ($query): void {
                 $query->whereDoesntHave('accessLink')

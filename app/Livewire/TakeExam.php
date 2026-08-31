@@ -45,6 +45,8 @@ class TakeExam extends Component
 
     public bool $showFullscreenExitWarning = false;
 
+    public bool $showNavigationWarning = false;
+
     public bool $isUnavailable = false;
 
     public string $unavailableMessage = '';
@@ -277,6 +279,31 @@ class TakeExam extends Component
         $this->showFullscreenExitWarning = false;
     }
 
+    public function warnBeforeLeaving(): void
+    {
+        if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        $this->showNavigationWarning = true;
+        $this->logClientEvent('browser_back');
+    }
+
+    public function cancelNavigationWarning(): void
+    {
+        $this->showNavigationWarning = false;
+    }
+
+    public function confirmNavigationAway(): void
+    {
+        if (! $this->showNavigationWarning) {
+            return;
+        }
+
+        $this->showNavigationWarning = false;
+        $this->dispatch('exam-navigation-confirmed');
+    }
+
     public function triggerFullscreenFallbackWarning(): void
     {
         if (
@@ -328,6 +355,7 @@ class TakeExam extends Component
         $this->resetErrorBag('currentQuestionResponse');
         $this->attempt = $submitExamAttempt->handle($this->attempt, $automatic);
         $this->submitted = true;
+        $this->dispatch('exam-submitted');
     }
 
     public function logClientEvent(string $eventType): void
@@ -336,14 +364,14 @@ class TakeExam extends Component
             return;
         }
 
-        if (! in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true)) {
+        if (! in_array($eventType, ['browser_back', 'copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true)) {
             return;
         }
 
         SuspiciousActivity::create([
             'exam_attempt_id' => $this->attempt->id,
             'event_type' => $eventType,
-            'severity' => in_array($eventType, ['copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true) ? 'medium' : 'low',
+            'severity' => in_array($eventType, ['browser_back', 'copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true) ? 'medium' : 'low',
             'details' => 'Client-side deterrent event captured during exam attempt.',
             'context' => [
                 'question_index' => $this->currentQuestionIndex,
