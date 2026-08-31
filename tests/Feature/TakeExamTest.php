@@ -436,13 +436,23 @@ test('copy and paste attempts are logged as suspicious activity', function () {
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))
-        ->call('logClientEvent', 'copy')
-        ->call('logClientEvent', 'paste');
+        ->call('logClientEvent', 'copy', 'Copied answer text', ['text/plain'])
+        ->call('logClientEvent', 'paste', 'Pasted answer text', ['text/plain', 'text/html']);
 
     $this->assertDatabaseHas('suspicious_activities', [
         'exam_attempt_id' => $component->get('attempt.id'),
         'event_type' => 'copy',
         'severity' => 'medium',
+    ]);
+
+    $copyActivity = SuspiciousActivity::query()
+        ->where('exam_attempt_id', $component->get('attempt.id'))
+        ->where('event_type', 'copy')
+        ->firstOrFail();
+
+    expect($copyActivity->context)->toMatchArray([
+        'clipboard_text' => 'Copied answer text',
+        'clipboard_types' => ['text/plain'],
     ]);
     $this->assertDatabaseHas('suspicious_activities', [
         'exam_attempt_id' => $component->get('attempt.id'),

@@ -358,7 +358,10 @@ class TakeExam extends Component
         $this->dispatch('exam-submitted');
     }
 
-    public function logClientEvent(string $eventType): void
+    /**
+     * @param  array<int, mixed>  $clipboardTypes
+     */
+    public function logClientEvent(string $eventType, ?string $clipboardText = null, array $clipboardTypes = []): void
     {
         if ($this->attempt === null) {
             return;
@@ -368,15 +371,27 @@ class TakeExam extends Component
             return;
         }
 
+        $context = [
+            'question_index' => $this->currentQuestionIndex,
+            'captured_at' => now()->toIso8601String(),
+        ];
+
+        if (in_array($eventType, ['copy', 'paste'], true)) {
+            $context['clipboard_text'] = Str::substr((string) $clipboardText, 0, 1000);
+            $context['clipboard_types'] = collect($clipboardTypes)
+                ->filter(fn (mixed $clipboardType): bool => is_string($clipboardType))
+                ->map(fn (string $clipboardType): string => Str::substr($clipboardType, 0, 100))
+                ->take(10)
+                ->values()
+                ->all();
+        }
+
         SuspiciousActivity::create([
             'exam_attempt_id' => $this->attempt->id,
             'event_type' => $eventType,
             'severity' => in_array($eventType, ['browser_back', 'copy', 'paste', 'blur', 'tab_hidden', 'window_blur', 'fullscreen_exit'], true) ? 'medium' : 'low',
             'details' => 'Client-side deterrent event captured during exam attempt.',
-            'context' => [
-                'question_index' => $this->currentQuestionIndex,
-                'captured_at' => now()->toIso8601String(),
-            ],
+            'context' => $context,
         ]);
 
         if ($eventType === 'fullscreen_exit' && $this->exam->require_fullscreen && ! $this->attempt->isFinished()) {

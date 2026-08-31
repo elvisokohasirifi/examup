@@ -58,6 +58,12 @@
                 @if ($activity->details)
                     <div class="mt-2">{{ $activity->details }}</div>
                 @endif
+                @if (in_array($activity->event_type, ['copy', 'paste'], true) && array_key_exists('clipboard_text', $activity->context ?? []))
+                    <div class="mt-2">
+                        <div class="small fw-semibold text-muted">Clipboard content</div>
+                        <pre class="mb-0 mt-1 rounded bg-light p-2 small text-break text-wrap">{{ $activity->context['clipboard_text'] !== '' ? $activity->context['clipboard_text'] : 'No readable plain text was available.' }}</pre>
+                    </div>
+                @endif
             </div>
         @empty
             <p class="mb-0 text-muted">No suspicious activity was recorded for this attempt.</p>

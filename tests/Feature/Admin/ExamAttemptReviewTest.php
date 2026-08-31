@@ -63,9 +63,13 @@ test('an exam owner can review a completed students answers, grading, and activi
     ]);
     SuspiciousActivity::factory()->create([
         'exam_attempt_id' => $attempt->id,
-        'event_type' => 'window_blur',
+        'event_type' => 'paste',
         'severity' => 'medium',
-        'details' => 'The exam tab lost focus.',
+        'details' => 'Clipboard activity was detected.',
+        'context' => [
+            'clipboard_text' => 'A pasted answer',
+            'clipboard_types' => ['text/plain'],
+        ],
     ]);
 
     $this->actingAs($admin)
@@ -81,8 +85,10 @@ test('an exam owner can review a completed students answers, grading, and activi
         ->assertSee('2 / 2 points')
         ->assertDontSee('2.00 / 2 points')
         ->assertSee('Suspicious events')
-        ->assertSee('window blur')
-        ->assertSee('The exam tab lost focus.');
+        ->assertSee('paste')
+        ->assertSee('Clipboard activity was detected.')
+        ->assertSee('Clipboard content')
+        ->assertSee('A pasted answer');
 });
 
 test('an attempt cannot be reviewed through another exam', function () {

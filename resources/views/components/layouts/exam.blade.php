@@ -171,11 +171,31 @@
             },
 
             handleClipboardEvent(event, eventType) {
-                this.report(eventType);
+                const clipboard = event.clipboardData;
+                let clipboardText = clipboard?.getData('text/plain') ?? '';
+
+                if (eventType === 'copy' && !clipboardText) {
+                    clipboardText = this.selectedText(event.target);
+                }
+
+                this.report(
+                    eventType,
+                    false,
+                    clipboardText.slice(0, 1000),
+                    Array.from(clipboard?.types ?? []).slice(0, 10),
+                );
 
                 if (this.disableCopyPaste) {
                     event.preventDefault();
                 }
+            },
+
+            selectedText(target) {
+                if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+                    return target.value.slice(target.selectionStart ?? 0, target.selectionEnd ?? 0);
+                }
+
+                return window.getSelection()?.toString() ?? '';
             },
 
             async beginAttempt() {
@@ -273,13 +293,13 @@
                 this.secondsUntilFullscreenSubmission = 0;
             },
 
-            report(eventType, bypassCooldown = false) {
+            report(eventType, bypassCooldown = false, clipboardText = null, clipboardTypes = []) {
                 if (!bypassCooldown && Date.now() - this.lastReportedAt < 10000) {
                     return;
                 }
 
                 this.lastReportedAt = Date.now();
-                return this.$wire.logClientEvent(eventType).catch(() => {});
+                return this.$wire.logClientEvent(eventType, clipboardText, clipboardTypes).catch(() => {});
             },
         });
 
