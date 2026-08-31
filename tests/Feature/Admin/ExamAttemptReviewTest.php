@@ -151,13 +151,24 @@ test('the results page links completed attempts to their individual review page'
     $attempt = ExamAttempt::factory()->create([
         'exam_id' => $exam->id,
         'exam_access_link_id' => $accessLink->id,
+        'student_name' => 'Amina Mensah',
+        'status' => ExamAttempt::STATUS_SUBMITTED,
+        'duration_seconds' => 583,
+    ]);
+    $otherAttempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $accessLink->id,
+        'student_name' => 'Kwame Owusu',
         'status' => ExamAttempt::STATUS_SUBMITTED,
         'duration_seconds' => 583,
     ]);
 
     $this->actingAs($admin)
-        ->get(route('admin.exams.results', $exam))
+        ->get(route('admin.exams.results', [$exam, 'student_name' => 'Amina']))
         ->assertOk()
+        ->assertSee('Search by student name')
+        ->assertSee('Amina Mensah')
+        ->assertDontSee('Kwame Owusu')
         ->assertSee('View completed exam')
         ->assertSee('Average completion time')
         ->assertSee('9.7')

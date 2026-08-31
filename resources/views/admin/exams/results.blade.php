@@ -56,7 +56,17 @@
 
         <div class="card mb-4">
             <div class="card-body">
-                <h4 class="card-title">Student attempts</h4>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                    <h4 class="card-title mb-0">Student attempts</h4>
+                    <form method="GET" action="{{ route('admin.exams.results', $exam) }}" class="d-flex flex-wrap gap-2">
+                        <label class="visually-hidden" for="student-name-search">Search by student name</label>
+                        <input id="student-name-search" name="student_name" type="search" value="{{ $studentNameSearch }}" class="form-control" placeholder="Search by student name">
+                        <button type="submit" class="btn btn-outline-primary">Search</button>
+                        @if ($studentNameSearch !== '')
+                            <a href="{{ route('admin.exams.results', $exam) }}" class="btn btn-outline-secondary">Clear</a>
+                        @endif
+                    </form>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
