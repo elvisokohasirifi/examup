@@ -249,6 +249,7 @@ test('fullscreen is required before a student can start a fullscreen exam', func
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])
+        ->assertSee('Please open this link in a current version of Chrome, Edge, or Firefox on a desktop, laptop, or phone.')
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))

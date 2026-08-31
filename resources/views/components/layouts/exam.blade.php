@@ -15,6 +15,7 @@
             disableCopyPaste: options.disableCopyPaste ?? false,
             requireFullscreen: options.requireFullscreen ?? false,
             expiresAt: options.expiresAt ?? null,
+            fullscreenUnsupported: false,
             lastReportedAt: 0,
             countdownInterval: null,
             fullscreenExitTimeout: null,
@@ -24,6 +25,7 @@
 
             init() {
                 this.setExamCountdown(this.expiresAt);
+                this.fullscreenUnsupported = this.requireFullscreen && !this.supportsFullscreen();
 
                 this.onVisibilityChange = () => {
                     if (document.hidden) {
@@ -134,27 +136,48 @@
             },
 
             async beginAttempt() {
-                await this.enterFullscreenIfRequired();
+                if (!await this.enterFullscreenIfRequired()) {
+                    return;
+                }
+
                 await this.$wire.startAttempt();
             },
 
             async resumeExam() {
-                await this.enterFullscreenIfRequired();
+                if (!await this.enterFullscreenIfRequired()) {
+                    return;
+                }
+
                 await this.$wire.resumeAttempt();
             },
 
             async enterFullscreenIfRequired() {
                 if (!this.requireFullscreen || document.fullscreenElement) {
-                    return;
+                    return true;
+                }
+
+                if (!this.supportsFullscreen()) {
+                    this.fullscreenUnsupported = true;
+
+                    return false;
                 }
 
                 try {
                     await document.documentElement.requestFullscreen();
                 } catch (error) {
-                    // The server-side validation displays the fullscreen requirement message.
+                    this.fullscreenUnsupported = true;
+
+                    return false;
                 }
 
                 await this.$wire.$set('fullscreenConfirmed', Boolean(document.fullscreenElement));
+
+                return Boolean(document.fullscreenElement);
+            },
+
+            supportsFullscreen() {
+                return document.fullscreenEnabled !== false
+                    && typeof document.documentElement.requestFullscreen === 'function';
             },
 
             async returnToFullscreen() {

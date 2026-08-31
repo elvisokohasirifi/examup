@@ -49,6 +49,9 @@
                         @endif
                         @if ($exam->require_fullscreen)
                             <p>Fullscreen mode is required before you can begin. Leaving fullscreen will be recorded.</p>
+                            <div x-show="fullscreenUnsupported" class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                                This browser does not support the fullscreen mode required for this exam. Please open this link in a current version of Chrome, Edge, or Firefox on a desktop, laptop, or phone.
+                            </div>
                         @endif
                         @if ($exam->expires_at)
                             <p>Available until: {{ $exam->expires_at->format('M j, Y g:i A') }}</p>
