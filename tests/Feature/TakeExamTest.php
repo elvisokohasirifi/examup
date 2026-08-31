@@ -249,7 +249,7 @@ test('fullscreen is required before a student can start a fullscreen exam', func
         'publicKey' => $link->public_key,
         'accessToken' => $link->access_token,
     ])
-        ->assertSee('Please open this link in a current version of Chrome, Edge, or Firefox on a desktop, laptop, or phone.')
+        ->assertSee('This browser cannot enter fullscreen mode.')
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->call('startAttempt', app(StartExamAttemptAction::class))
@@ -257,6 +257,40 @@ test('fullscreen is required before a student can start a fullscreen exam', func
         ->set('fullscreenConfirmed', true)
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->assertSet('attempt.student_email', 'student@example.com');
+});
+
+test('an unsupported fullscreen browser can start an exam and is warned when leaving it', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'require_fullscreen' => true,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->assertSee('This browser cannot enter fullscreen mode.')
+        ->set('fullscreenUnsupported', true)
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertSet('attempt.student_email', 'student@example.com')
+        ->call('triggerFullscreenFallbackWarning')
+        ->assertSet('showFullscreenExitWarning', true)
+        ->assertSee('You moved away from the exam.')
+        ->call('submitForFullscreenExit', app(SubmitExamAttemptAction::class))
+        ->assertSet('submitted', true);
+
+    $this->assertDatabaseHas('exam_attempts', [
+        'id' => $component->get('attempt.id'),
+        'status' => ExamAttempt::STATUS_AUTO_SUBMITTED,
+    ]);
 });
 
 test('leaving fullscreen warns the student and auto-submits the attempt', function () {

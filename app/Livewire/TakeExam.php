@@ -39,6 +39,8 @@ class TakeExam extends Component
 
     public bool $fullscreenConfirmed = false;
 
+    public bool $fullscreenUnsupported = false;
+
     public bool $showSubmitConfirmation = false;
 
     public bool $showFullscreenExitWarning = false;
@@ -275,9 +277,26 @@ class TakeExam extends Component
         $this->showFullscreenExitWarning = false;
     }
 
+    public function triggerFullscreenFallbackWarning(): void
+    {
+        if (
+            $this->attempt === null
+            || $this->attempt->isFinished()
+            || ! $this->exam->require_fullscreen
+            || ! $this->fullscreenUnsupported
+        ) {
+            return;
+        }
+
+        $this->showFullscreenExitWarning = true;
+    }
+
     public function submitForFullscreenExit(SubmitExamAttemptAction $submitExamAttempt): void
     {
-        if (! $this->showFullscreenExitWarning) {
+        if (
+            ! $this->showFullscreenExitWarning
+            && (! $this->fullscreenUnsupported || ! $this->exam->require_fullscreen)
+        ) {
             return;
         }
 
@@ -503,7 +522,7 @@ class TakeExam extends Component
 
     private function meetsFullscreenRequirement(): bool
     {
-        if (! $this->exam->require_fullscreen || $this->fullscreenConfirmed) {
+        if (! $this->exam->require_fullscreen || $this->fullscreenConfirmed || $this->fullscreenUnsupported) {
             return true;
         }
 

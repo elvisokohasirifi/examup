@@ -15,6 +15,7 @@
             disableCopyPaste: options.disableCopyPaste ?? false,
             requireFullscreen: options.requireFullscreen ?? false,
             expiresAt: options.expiresAt ?? null,
+            attemptActive: options.attemptActive ?? false,
             fullscreenUnsupported: false,
             lastReportedAt: 0,
             countdownInterval: null,
@@ -30,6 +31,7 @@
                 this.onVisibilityChange = () => {
                     if (document.hidden) {
                         this.report('tab_hidden');
+                        this.triggerUnsupportedFullscreenDeterrent();
                     }
                 };
 
@@ -37,6 +39,7 @@
                     window.setTimeout(() => {
                         if (!document.hasFocus()) {
                             this.report('window_blur');
+                            this.triggerUnsupportedFullscreenDeterrent();
                         }
                     });
                 };
@@ -63,6 +66,7 @@
                     this.startFullscreenExitCountdown();
                 };
                 this.onExamAttemptStarted = ({ detail }) => {
+                    this.attemptActive = true;
                     this.setExamCountdown(detail.expiresAt ?? null);
                 };
 
@@ -158,16 +162,18 @@
 
                 if (!this.supportsFullscreen()) {
                     this.fullscreenUnsupported = true;
+                    await this.$wire.$set('fullscreenUnsupported', true);
 
-                    return false;
+                    return true;
                 }
 
                 try {
                     await document.documentElement.requestFullscreen();
                 } catch (error) {
                     this.fullscreenUnsupported = true;
+                    await this.$wire.$set('fullscreenUnsupported', true);
 
-                    return false;
+                    return true;
                 }
 
                 await this.$wire.$set('fullscreenConfirmed', Boolean(document.fullscreenElement));
@@ -180,6 +186,15 @@
                     && typeof document.documentElement.requestFullscreen === 'function';
             },
 
+            triggerUnsupportedFullscreenDeterrent() {
+                if (!this.requireFullscreen || !this.fullscreenUnsupported || !this.attemptActive) {
+                    return;
+                }
+
+                this.$wire.triggerFullscreenFallbackWarning();
+                this.startFullscreenExitCountdown();
+            },
+
             async returnToFullscreen() {
                 await this.enterFullscreenIfRequired();
 
@@ -190,6 +205,10 @@
             },
 
             startFullscreenExitCountdown() {
+                if (this.fullscreenExitTimeout !== null) {
+                    return;
+                }
+
                 this.clearFullscreenExitCountdown();
                 this.secondsUntilFullscreenSubmission = 15;
                 this.fullscreenExitInterval = window.setInterval(() => {

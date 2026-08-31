@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()) })" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -48,9 +48,9 @@
                             <p>Time limit: {{ $exam->time_limit_minutes }} minutes</p>
                         @endif
                         @if ($exam->require_fullscreen)
-                            <p>Fullscreen mode is required before you can begin. Leaving fullscreen will be recorded.</p>
+                            <p x-show="!fullscreenUnsupported">Fullscreen mode is required before you can begin. Leaving fullscreen will be recorded.</p>
                             <div x-show="fullscreenUnsupported" class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-                                This browser does not support the fullscreen mode required for this exam. Please open this link in a current version of Chrome, Edge, or Firefox on a desktop, laptop, or phone.
+                                This browser cannot enter fullscreen mode. You may continue, but leaving this exam tab or switching apps will automatically submit your exam after 15 seconds.
                             </div>
                         @endif
                         @if ($exam->expires_at)
@@ -211,35 +211,42 @@
                         </section>
                     @endforeach
 
-                    @if ($showFullscreenExitWarning)
-                        <div class="fixed inset-0 z-[60] grid place-items-center bg-red-950/55 px-4" role="alertdialog" aria-modal="true" aria-labelledby="fullscreen-exit-title">
-                            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Fullscreen required</p>
-                                <h2 id="fullscreen-exit-title" class="mt-2 text-2xl font-semibold text-slate-900">You left fullscreen mode.</h2>
-                                <p class="mt-3 text-sm leading-6 text-slate-600">Return to fullscreen now to continue. Your exam will be automatically submitted in <span class="font-semibold text-red-700" x-text="secondsUntilFullscreenSubmission">15</span> seconds.</p>
-                                <div class="mt-6 flex justify-end">
-                                    <button type="button" x-on:click="returnToFullscreen()" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Return to fullscreen</button>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($showSubmitConfirmation)
-                        <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
-                            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Final check</p>
-                                <h2 id="submit-confirmation-title" class="mt-2 text-2xl font-semibold text-slate-900">Submit your exam?</h2>
-                                <p class="mt-3 text-sm leading-6 text-slate-600">Your answers will be submitted and you will not be able to edit them afterwards.</p>
-                                <div class="mt-6 flex flex-wrap justify-end gap-3">
-                                    <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
-                                    <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Yes, submit exam</button>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
                 @endif
             </div>
         @endif
         @endif
     </div>
+
+    @if ($showFullscreenExitWarning)
+        <div class="fixed inset-0 z-[60] grid place-items-center bg-red-950/55 px-4" role="alertdialog" aria-modal="true" aria-labelledby="fullscreen-exit-title">
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                @if ($fullscreenUnsupported)
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Exam monitoring alert</p>
+                    <h2 id="fullscreen-exit-title" class="mt-2 text-2xl font-semibold text-slate-900">You moved away from the exam.</h2>
+                    <p class="mt-3 text-sm leading-6 text-slate-600">Your browser cannot use fullscreen mode. This exam will be automatically submitted in <span class="font-semibold text-red-700" x-text="secondsUntilFullscreenSubmission">15</span> seconds.</p>
+                @else
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Fullscreen required</p>
+                    <h2 id="fullscreen-exit-title" class="mt-2 text-2xl font-semibold text-slate-900">You left fullscreen mode.</h2>
+                    <p class="mt-3 text-sm leading-6 text-slate-600">Return to fullscreen now to continue. Your exam will be automatically submitted in <span class="font-semibold text-red-700" x-text="secondsUntilFullscreenSubmission">15</span> seconds.</p>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" x-on:click="returnToFullscreen()" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Return to fullscreen</button>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if ($showSubmitConfirmation)
+        <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Final check</p>
+                <h2 id="submit-confirmation-title" class="mt-2 text-2xl font-semibold text-slate-900">Submit your exam?</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-600">Your answers will be submitted and you will not be able to edit them afterwards.</p>
+                <div class="mt-6 flex flex-wrap justify-end gap-3">
+                    <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
+                    <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Yes, submit exam</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
