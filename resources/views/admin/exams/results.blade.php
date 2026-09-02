@@ -21,6 +21,32 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4 class="card-title">Bulk allow retakes</h4>
+                <p class="text-muted">Paste one email address per line or upload a TXT or CSV file with the email address in the first column. Only candidates with a completed attempt can receive a retake link.</p>
+                <form method="POST" action="{{ route('admin.exams.retakes.bulk', $exam) }}" enctype="multipart/form-data" onsubmit="return confirm('Email one-time retake links to every eligible candidate in this list?');">
+                    @csrf
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-7">
+                            <label for="retake-emails" class="form-label">Email addresses</label>
+                            <textarea id="retake-emails" name="emails" rows="4" class="form-control @error('emails') is-invalid @enderror" placeholder="student@example.com">{{ is_array(old('emails')) ? implode("\n", old('emails')) : old('emails') }}</textarea>
+                            @error('emails')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('emails.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-3">
+                            <label for="retake-email-file" class="form-label">TXT or CSV file</label>
+                            <input id="retake-email-file" name="email_file" type="file" accept=".txt,.csv,text/plain,text/csv" class="form-control @error('email_file') is-invalid @enderror">
+                            @error('email_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="submit" class="btn btn-outline-warning">Email retake links</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-xl">
                 <div class="card bg-primary text-white h-100"><div class="card-body">

@@ -10,6 +10,7 @@ use App\Models\Question;
 use App\Models\User;
 use App\Notifications\ExamAccessLinkNotification;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 
 uses(LazilyRefreshDatabase::class);
@@ -54,6 +55,38 @@ test('an exam owner can email a student a single-use retake link', function () {
         ->and($retakeLink->meta['is_retake'])->toBeTrue();
 
     Notification::assertSentOnDemand(ExamAccessLinkNotification::class);
+});
+
+test('an exam owner can bulk upload emails to allow eligible candidates to retake an exam', function () {
+    Notification::fake();
+
+    $admin = User::factory()->admin()->create();
+    $exam = Exam::factory()->for($admin, 'creator')->create();
+    $accessLink = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $admin->id,
+        'email' => 'student@example.com',
+    ]);
+    $attempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $accessLink->id,
+        'student_email' => 'student@example.com',
+        'status' => ExamAttempt::STATUS_SUBMITTED,
+        'submitted_at' => now(),
+    ]);
+
+    $emailFile = UploadedFile::fake()->createWithContent(
+        'retakes.csv',
+        "email\nstudent@example.com\nnot-found@example.com\n",
+    );
+
+    $this->actingAs($admin)
+        ->post(route('admin.exams.retakes.bulk', $exam), ['email_file' => $emailFile])
+        ->assertRedirect(route('admin.exams.results', $exam))
+        ->assertSessionHas('success', 'Retake links were emailed to 1 candidate. Skipped 1 email with no eligible completed attempt.');
+
+    expect(ExamAccessLink::query()->where('meta->retake_for_attempt_id', $attempt->id)->exists())->toBeTrue();
+    Notification::assertSentOnDemand(ExamAccessLinkNotification::class, 1);
 });
 
 test('a submitted retake supersedes the old attempt in results and statistics', function () {

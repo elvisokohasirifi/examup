@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AllowExamRetakeController;
 use App\Http\Controllers\Admin\Auth\GoogleLoginController;
+use App\Http\Controllers\Admin\BulkAllowExamRetakeController;
 use App\Http\Controllers\Admin\ExamAccessController;
 use App\Http\Controllers\Admin\ExamAttemptCsvController;
 use App\Http\Controllers\Admin\ExamAttemptReviewController;
@@ -45,6 +46,8 @@ Route::group([
     Route::post('exams/{exam}/attempts/{attempt}/retake', AllowExamRetakeController::class)
         ->scopeBindings()
         ->name('admin.exams.attempts.retake');
+    Route::post('exams/{exam}/retakes', BulkAllowExamRetakeController::class)
+        ->name('admin.exams.retakes.bulk');
     Route::post('exams/{exam}/results/regrade', RegradeExamAttemptsController::class)->name('admin.exams.regrade');
     Route::get('exams/{exam}/attempts/{attempt}', ExamAttemptReviewController::class)
         ->scopeBindings()
