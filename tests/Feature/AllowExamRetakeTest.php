@@ -138,7 +138,9 @@ test('a submitted retake supersedes the old attempt in results and statistics', 
         ->assertSee('Old result')
         ->assertSee('New result')
         ->assertSee('Original - replaced')
-        ->assertSee('Retake');
+        ->assertSee('Retake')
+        ->assertSee('background-color: #cbd5e1', false)
+        ->assertSee('background-color: #4338ca', false);
 });
 
 test('an examiner cannot allow a retake for another examiners exam', function () {

@@ -114,11 +114,11 @@
                                     <td>{{ $attempt->student_name }}</td>
                                     <td>
                                         @if (data_get($attempt->accessLink?->meta, 'is_retake'))
-                                            <span class="badge bg-primary">Retake</span>
+                                            <span class="badge" style="background-color: #4338ca; color: #ffffff;">Retake</span>
                                         @elseif ($attempt->isSuperseded())
-                                            <span class="badge bg-secondary">Original - replaced</span>
+                                            <span class="badge" style="background-color: #cbd5e1; color: #1e293b;">Original - replaced</span>
                                         @else
-                                            <span class="badge bg-light text-dark border">Original</span>
+                                            <span class="badge" style="background-color: #0f766e; color: #ffffff;">Original</span>
                                         @endif
                                     </td>
                                     <td>{{ $attempt->student_email ?: '-' }}</td>

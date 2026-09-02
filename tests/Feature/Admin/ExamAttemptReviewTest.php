@@ -169,6 +169,7 @@ test('the results page links completed attempts to their individual review page'
         ->assertSee('Search by student name')
         ->assertSee('Amina Mensah')
         ->assertDontSee('Kwame Owusu')
+        ->assertSee('background-color: #0f766e', false)
         ->assertSee('View completed exam')
         ->assertSee('Average completion time')
         ->assertSee('9.7')
