@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ExamAttemptCsvController;
 use App\Http\Controllers\Admin\ExamAttemptReviewController;
 use App\Http\Controllers\Admin\ExamCrudController;
 use App\Http\Controllers\Admin\ExamResultsController;
+use App\Http\Controllers\Admin\HelpController;
 use App\Http\Controllers\Admin\RegradeExamAttemptsController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,7 @@ Route::group([
     ),
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
+    Route::get('help', HelpController::class)->name('admin.help');
     Route::get('exam/questions/sample.txt', [ExamCrudController::class, 'downloadQuestionImportSample'])
         ->name('admin.exams.questions.sample');
     Route::crud('exam', ExamCrudController::class);

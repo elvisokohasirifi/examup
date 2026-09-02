@@ -820,5 +820,17 @@
         "asset_path": "https://www.gravatar.com/avatar/e5287f556b6129471708ebbc3ee16889c60dcead560303d3a7d5d6e083f7e224.jpg?s=80&d=blank&r=g",
         "asset_disk_path": "basset/www.gravatar.com/avatar/e5287f556b6129471708ebbc3ee16889c60dcead560303d3a7d5d6e083f7e224.jpg",
         "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/74ff795fe09cd212f90a8f988634132a53df149c7c9df0e221ddbaab4610e866.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/74ff795fe09cd212f90a8f988634132a53df149c7c9df0e221ddbaab4610e866.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/74ff795fe09cd212f90a8f988634132a53df149c7c9df0e221ddbaab4610e866.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/74ff795fe09cd212f90a8f988634132a53df149c7c9df0e221ddbaab4610e866.jpg",
+        "asset_attributes": []
+    },
+    "https://www.gravatar.com/avatar/41b4f0528a587df756444c7cf3b2ba493f206eb0721c8bf28f12d01a7396896b.jpg?s=80&d=blank&r=g": {
+        "asset_name": "https://www.gravatar.com/avatar/41b4f0528a587df756444c7cf3b2ba493f206eb0721c8bf28f12d01a7396896b.jpg?s=80&d=blank&r=g",
+        "asset_path": "https://www.gravatar.com/avatar/41b4f0528a587df756444c7cf3b2ba493f206eb0721c8bf28f12d01a7396896b.jpg?s=80&d=blank&r=g",
+        "asset_disk_path": "basset/www.gravatar.com/avatar/41b4f0528a587df756444c7cf3b2ba493f206eb0721c8bf28f12d01a7396896b.jpg",
+        "asset_attributes": []
     }
 }
