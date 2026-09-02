@@ -135,8 +135,10 @@ test('a submitted retake supersedes the old attempt in results and statistics', 
     $this->actingAs($admin)
         ->get(route('admin.exams.results', $exam))
         ->assertOk()
-        ->assertDontSee('Old result')
-        ->assertSee('New result');
+        ->assertSee('Old result')
+        ->assertSee('New result')
+        ->assertSee('Original - replaced')
+        ->assertSee('Retake');
 });
 
 test('an examiner cannot allow a retake for another examiners exam', function () {

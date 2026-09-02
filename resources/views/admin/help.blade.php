@@ -66,7 +66,7 @@
                 <div id="help-access" class="accordion-collapse collapse" data-bs-parent="#help-accordion"><div class="accordion-body">
                     <p>Select <strong>Preview Exam</strong> from the exam list to verify the candidate journey without sending it to students.</p>
                     <ul class="mb-0">
-                        <li><strong>Shareable link:</strong> anyone with the link can start the exam. Copy it from the access page and delete it there when it is no longer needed.</li>
+                        <li><strong>Shareable link:</strong> anyone with the link can start the exam. Delete unused links, or disable links with attempts to preserve their results.</li>
                         <li><strong>Email individual links:</strong> paste one email address per line. Each recipient gets a different link and their email is prefilled.</li>
                         <li>Exam expiry applies to every link automatically. An expired link shows a friendly unavailable message rather than a candidate error page.</li>
                     </ul>

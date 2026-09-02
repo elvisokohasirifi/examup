@@ -17,7 +17,6 @@ class ExamResultsController extends Controller
         $studentNameSearch = trim((string) $request->query('student_name', ''));
 
         $attempts = $exam->attempts()
-            ->current()
             ->with('accessLink')
             ->withCount('suspiciousActivities')
             ->when($studentNameSearch !== '', fn ($query) => $query->where('student_name', 'like', "%{$studentNameSearch}%"))

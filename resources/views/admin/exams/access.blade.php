@@ -99,11 +99,21 @@
                                     </td>
                                     <td class="text-end">
                                         @if (data_get($link->meta, 'shareable'))
-                                            <form method="POST" action="{{ route('admin.exams.access.destroy', [$exam, $link]) }}">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </form>
+                                            @if ($link->attempts_count > 0 && $link->is_active)
+                                                <form method="POST" action="{{ route('admin.exams.access.destroy', [$exam, $link]) }}" onsubmit="return confirm('Disable this link? Existing attempts and results will be preserved.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Disable</button>
+                                                </form>
+                                            @elseif ($link->attempts_count > 0)
+                                                <span class="small text-muted">Preserved with results</span>
+                                            @else
+                                                <form method="POST" action="{{ route('admin.exams.access.destroy', [$exam, $link]) }}" onsubmit="return confirm('Delete this unused link?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                </form>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>

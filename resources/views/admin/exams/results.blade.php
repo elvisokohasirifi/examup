@@ -98,6 +98,7 @@
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Attempt type</th>
                                 <th>Email</th>
                                 <th>Index number</th>
                                 <th>Status</th>
@@ -111,6 +112,15 @@
                             @forelse ($attempts as $attempt)
                                 <tr>
                                     <td>{{ $attempt->student_name }}</td>
+                                    <td>
+                                        @if (data_get($attempt->accessLink?->meta, 'is_retake'))
+                                            <span class="badge bg-primary">Retake</span>
+                                        @elseif ($attempt->isSuperseded())
+                                            <span class="badge bg-secondary">Original - replaced</span>
+                                        @else
+                                            <span class="badge bg-light text-dark border">Original</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $attempt->student_email ?: '-' }}</td>
                                     <td>{{ $attempt->student_index_number ?: '-' }}</td>
                                     <td>{{ str_replace('_', ' ', $attempt->status) }}</td>
@@ -133,7 +143,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">No exam attempts yet.</td>
+                                    <td colspan="9" class="text-center text-muted">No exam attempts yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -2,6 +2,7 @@
 
 use App\Models\Exam;
 use App\Models\ExamAccessLink;
+use App\Models\ExamAttempt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -68,6 +69,28 @@ test('admin can delete a shareable link from the exam access page', function () 
         ->assertSessionHas('status', 'Shareable link deleted successfully.');
 
     $this->assertModelMissing($link);
+});
+
+test('admin disabling a used shareable link preserves its attempts and results', function () {
+    $admin = User::factory()->admin()->create();
+    $exam = Exam::factory()->for($admin, 'creator')->create();
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $admin->id,
+        'meta' => ['shareable' => true],
+    ]);
+    $attempt = ExamAttempt::factory()->create([
+        'exam_id' => $exam->id,
+        'exam_access_link_id' => $link->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.exams.access.destroy', [$exam, $link]))
+        ->assertRedirect(route('admin.exams.access', $exam))
+        ->assertSessionHas('status', 'Shareable link disabled to preserve its associated attempts and results.');
+
+    expect($link->refresh()->is_active)->toBeFalse();
+    $this->assertModelExists($attempt);
 });
 
 test('admin can email unique links from the exam access page', function () {

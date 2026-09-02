@@ -19,6 +19,7 @@ class ExamAccessController extends Controller
 
         return view('admin.exams.access', [
             'exam' => $exam->loadMissing(['accessLinks' => fn ($query) => $query
+                ->withCount('attempts')
                 ->where(function ($nestedQuery) {
                     $nestedQuery->whereNull('meta')
                         ->orWhere('meta->is_preview', false)
@@ -77,6 +78,14 @@ class ExamAccessController extends Controller
         abort_unless(backpack_user()->can('update', $exam), 403);
         abort_unless($accessLink->exam_id === $exam->id, 404);
         abort_unless((bool) data_get($accessLink->meta, 'shareable'), 404);
+
+        if ($accessLink->attempts()->exists()) {
+            $accessLink->update(['is_active' => false]);
+
+            return redirect()
+                ->route('admin.exams.access', $exam)
+                ->with('status', 'Shareable link disabled to preserve its associated attempts and results.');
+        }
 
         $accessLink->delete();
 
