@@ -138,7 +138,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Time (seconds)</label>
                             <input type="number" min="1" max="3600" name="{{ $fieldName }}[{{ $questionIndex }}][time_limit_seconds]" value="{{ $question['time_limit_seconds'] ?? '' }}" class="form-control">
-                            <div class="form-text">Required only when per-question timer is enabled.</div>
+                            <div class="form-text">When blank, the per-question timer uses the exam time divided by questions shown per attempt.</div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-check mt-4 pt-2" data-multiple-selection-wrapper>
@@ -250,7 +250,7 @@
                     <div class="col-md-3">
                         <label class="form-label">Time (seconds)</label>
                         <input type="number" min="1" max="3600" name="{{ $fieldName }}[${index}][time_limit_seconds]" value="" class="form-control">
-                        <div class="form-text">Required only when per-question timer is enabled.</div>
+                        <div class="form-text">When blank, the per-question timer uses the exam time divided by questions shown per attempt.</div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-check mt-4 pt-2" data-multiple-selection-wrapper>

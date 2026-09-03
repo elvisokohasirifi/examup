@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Exam;
+use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -138,4 +139,50 @@ test('admin can enable per-question timer for no-backtracking exams', function (
 
     expect(data_get($exam->settings, 'enable_per_question_timer'))->toBeTrue()
         ->and(data_get($question->settings, 'time_limit_seconds'))->toBe(20);
+});
+
+test('admin defaults blank per-question limits from the exam time and questions per attempt', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this
+        ->actingAs($admin)
+        ->post('/admin/exam', [
+            'title' => 'Default Timed Drill',
+            'display_mode' => 'one_at_a_time',
+            'allow_back_navigation' => 0,
+            'settings' => ['enable_per_question_timer' => 1],
+            'shuffle_questions' => 0,
+            'questions_per_attempt' => 3,
+            'time_limit_minutes' => 60,
+            'autosave_interval_seconds' => 15,
+            'show_score_to_student' => 0,
+            'show_correct_answers_to_student' => 0,
+            'show_index_number_field' => 0,
+            'disable_copy_paste' => 0,
+            'require_fullscreen' => 0,
+            'is_published' => 1,
+            'questions' => collect(range(1, 3))
+                ->map(fn (int $number): array => [
+                    'type' => 'multiple_choice',
+                    'prompt' => "Timed question {$number}",
+                    'help_text' => '',
+                    'points' => 1,
+                    'time_limit_seconds' => null,
+                    'allows_multiple_selection' => 0,
+                    'accepted_answers' => [],
+                    'question_options' => [
+                        ['label' => 'Answer A', 'is_correct' => 1],
+                        ['label' => 'Answer B', 'is_correct' => 0],
+                    ],
+                ])
+                ->all(),
+        ]);
+
+    $response->assertRedirect();
+
+    $exam = Exam::query()->where('title', 'Default Timed Drill')->firstOrFail();
+
+    $exam->questions()->get()->each(
+        fn (Question $question) => expect($question->timeLimitSeconds())->toBe(1200),
+    );
 });

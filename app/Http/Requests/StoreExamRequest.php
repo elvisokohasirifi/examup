@@ -145,6 +145,21 @@ class StoreExamRequest extends FormRequest
             ->values()
             ->all();
 
+        $perQuestionTimerEnabled = filter_var($this->input('settings.enable_per_question_timer', false), FILTER_VALIDATE_BOOL);
+        $defaultQuestionTimeLimitSeconds = $this->defaultQuestionTimeLimitSeconds(
+            $this->integer('time_limit_minutes'),
+            $this->integer('questions_per_attempt') ?: count($normalizedQuestions),
+        );
+
+        if ($perQuestionTimerEnabled && $defaultQuestionTimeLimitSeconds !== null) {
+            $normalizedQuestions = collect($normalizedQuestions)
+                ->map(fn (array $question): array => [
+                    ...$question,
+                    'time_limit_seconds' => $question['time_limit_seconds'] ?? $defaultQuestionTimeLimitSeconds,
+                ])
+                ->all();
+        }
+
         $booleanFields = [
             'allow_back_navigation' => true,
             'shuffle_questions' => false,
@@ -163,7 +178,7 @@ class StoreExamRequest extends FormRequest
             ->all();
 
         $settings = [
-            'enable_per_question_timer' => filter_var($this->input('settings.enable_per_question_timer', false), FILTER_VALIDATE_BOOL),
+            'enable_per_question_timer' => $perQuestionTimerEnabled,
         ];
 
         $this->merge([
@@ -171,6 +186,15 @@ class StoreExamRequest extends FormRequest
             'settings' => $settings,
             'questions' => $normalizedQuestions,
         ]);
+    }
+
+    private function defaultQuestionTimeLimitSeconds(int $timeLimitMinutes, int $questionsPerAttempt): ?int
+    {
+        if ($timeLimitMinutes < 1 || $questionsPerAttempt < 1) {
+            return null;
+        }
+
+        return (int) ceil(($timeLimitMinutes * 60) / $questionsPerAttempt);
     }
 
     public function after(): array

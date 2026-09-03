@@ -224,7 +224,10 @@ class ExamCrudController extends CrudController
             ->hint('Leave blank to show every question. When set, students receive a random selection from this exam\'s question pool.')
             ->attributes(['min' => 1])
             ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
-        CRUD::field('time_limit_minutes')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
+        CRUD::field('time_limit_minutes')
+            ->type('number')
+            ->hint('When the per-question timer is enabled, blank question limits default to this total divided by questions shown per attempt.')
+            ->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('autosave_interval_seconds')->type('number')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         CRUD::field('expires_at')->type('datetime')->label('Exam expires at')->wrapper(['class' => 'form-group col-md-6 js-exam-step js-exam-step-1']);
         $this->addExamBooleanField('show_score_to_student', 'Show score to student', $entry?->show_score_to_student ?? false);
