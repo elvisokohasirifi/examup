@@ -632,3 +632,77 @@ test('students cannot go back and must answer each question before proceeding wh
         ->assertSee('No backtracking')
         ->assertSee($secondQuestion->prompt);
 });
+
+test('per-question timer advances to the next question and auto-submits the last question when time runs out', function () {
+    $examiner = User::factory()->create();
+
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'display_mode' => 'one_at_a_time',
+        'allow_back_navigation' => false,
+        'show_index_number_field' => false,
+        'settings' => ['enable_per_question_timer' => true],
+    ]);
+
+    $firstQuestion = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'type' => Question::TYPE_MULTIPLE_CHOICE,
+        'position' => 1,
+        'settings' => ['time_limit_seconds' => 10],
+    ]);
+
+    QuestionOption::factory()->create([
+        'question_id' => $firstQuestion->id,
+        'label' => 'First option',
+        'is_correct' => true,
+    ]);
+
+    $secondQuestion = Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 2,
+        'accepted_answers' => ['Laravel'],
+        'settings' => ['time_limit_seconds' => 10],
+    ]);
+
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->assertSee('Question timer:')
+        ->assertSee('Moves on in')
+        ->assertSet('currentQuestionIndex', 0);
+
+    $attemptId = $component->get('attempt.id');
+
+    $attempt = ExamAttempt::query()->findOrFail($attemptId);
+    $meta = $attempt->meta ?? [];
+    $meta['current_question_timer']['expires_at'] = now()->subSecond()->toIso8601String();
+    $attempt->update(['meta' => $meta]);
+
+    $component
+        ->call('handleQuestionTimerExpired', app(SaveExamAnswerAction::class), app(SubmitExamAttemptAction::class))
+        ->assertSet('currentQuestionIndex', 1)
+        ->assertSee($secondQuestion->prompt);
+
+    $attempt = ExamAttempt::query()->findOrFail($attemptId);
+    $meta = $attempt->meta ?? [];
+    $meta['current_question_timer']['expires_at'] = now()->subSecond()->toIso8601String();
+    $attempt->update(['meta' => $meta]);
+
+    $component
+        ->call('handleQuestionTimerExpired', app(SaveExamAnswerAction::class), app(SubmitExamAttemptAction::class))
+        ->assertSet('submitted', true);
+
+    $this->assertDatabaseHas('exam_attempts', [
+        'id' => $attemptId,
+        'status' => ExamAttempt::STATUS_AUTO_SUBMITTED,
+    ]);
+});

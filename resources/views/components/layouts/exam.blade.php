@@ -16,19 +16,25 @@
             requireFullscreen: options.requireFullscreen ?? false,
             expiresAt: options.expiresAt ?? null,
             attemptActive: options.attemptActive ?? false,
+            questionExpiresAt: options.questionExpiresAt ?? null,
+            questionTimerEnabled: options.questionTimerEnabled ?? false,
             fullscreenUnsupported: false,
             lastReportedAt: 0,
             countdownInterval: null,
+            questionCountdownInterval: null,
             fullscreenExitTimeout: null,
             fullscreenExitInterval: null,
             secondsUntilFullscreenSubmission: 0,
             timeRemaining: null,
+            questionTimeRemaining: null,
             examUrl: window.location.href,
             historyGuardEnabled: false,
             isLeavingExam: false,
+            questionTimerSubmissionPending: false,
 
             init() {
                 this.setExamCountdown(this.expiresAt);
+                this.syncQuestionTimer(this.questionExpiresAt, this.questionTimerEnabled, this.attemptActive);
                 this.fullscreenUnsupported = this.requireFullscreen && !this.supportsFullscreen();
 
                 this.onVisibilityChange = () => {
@@ -104,6 +110,7 @@
                 window.removeEventListener('exam-attempt-started', this.onExamAttemptStarted);
                 window.removeEventListener('popstate', this.onPopState);
                 this.clearExamCountdown();
+                this.clearQuestionCountdown();
                 this.clearFullscreenExitCountdown();
             },
 
@@ -150,6 +157,20 @@
                 this.countdownInterval = window.setInterval(updateCountdown, 250);
             },
 
+            syncQuestionTimer(questionExpiresAt, questionTimerEnabled, attemptActive) {
+                this.questionExpiresAt = questionExpiresAt;
+                this.questionTimerEnabled = questionTimerEnabled;
+                this.attemptActive = attemptActive;
+
+                if (!this.questionTimerEnabled || !this.attemptActive) {
+                    this.clearQuestionCountdown();
+
+                    return;
+                }
+
+                this.setQuestionCountdown(questionExpiresAt);
+            },
+
             clearExamCountdown() {
                 if (this.countdownInterval !== null) {
                     window.clearInterval(this.countdownInterval);
@@ -157,6 +178,49 @@
                 }
 
                 this.timeRemaining = null;
+            },
+
+            setQuestionCountdown(expiresAt) {
+                this.clearQuestionCountdown();
+
+                if (!expiresAt) {
+                    return;
+                }
+
+                const expiresAtTimestamp = new Date(expiresAt).getTime();
+
+                if (Number.isNaN(expiresAtTimestamp)) {
+                    return;
+                }
+
+                const updateCountdown = async () => {
+                    this.questionTimeRemaining = Math.max(0, Math.ceil((expiresAtTimestamp - Date.now()) / 1000));
+
+                    if (this.questionTimeRemaining > 0 || this.questionTimerSubmissionPending) {
+                        return;
+                    }
+
+                    this.questionTimerSubmissionPending = true;
+
+                    try {
+                        await this.$wire.handleQuestionTimerExpired();
+                    } finally {
+                        this.questionTimerSubmissionPending = false;
+                    }
+                };
+
+                updateCountdown();
+                this.questionCountdownInterval = window.setInterval(updateCountdown, 250);
+            },
+
+            clearQuestionCountdown() {
+                if (this.questionCountdownInterval !== null) {
+                    window.clearInterval(this.questionCountdownInterval);
+                    this.questionCountdownInterval = null;
+                }
+
+                this.questionTimeRemaining = null;
+                this.questionTimerSubmissionPending = false;
             },
 
             formatDuration(seconds) {

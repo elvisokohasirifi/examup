@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()) })" x-on:exam-navigation-confirmed.window="leaveExam()" x-on:exam-submitted.window="disableHistoryGuard()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()), questionExpiresAt: @js($this->currentQuestionExpiresAt), questionTimerEnabled: @js($this->questionTimerEnabled) })" x-effect="syncQuestionTimer(@js($this->currentQuestionExpiresAt), @js($this->questionTimerEnabled), @js($attempt !== null && ! $attempt->isFinished()))" x-on:exam-navigation-confirmed.window="leaveExam()" x-on:exam-submitted.window="disableHistoryGuard()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -26,6 +26,9 @@
                     @if ($this->timeRemaining !== null && ! $attempt->isFinished())
                         <div x-show="timeRemaining !== null" class="text-amber-300">Time remaining: <span x-text="formatDuration(timeRemaining)">{{ gmdate('H:i:s', $this->timeRemaining) }}</span></div>
                     @endif
+                    @if ($this->currentQuestionTimeRemaining !== null && ! $attempt->isFinished())
+                        <div x-show="questionTimeRemaining !== null" class="text-sky-300">Question timer: <span x-text="formatDuration(questionTimeRemaining)">{{ gmdate('H:i:s', $this->currentQuestionTimeRemaining) }}</span></div>
+                    @endif
                 </div>
             @endif
         </div>
@@ -43,6 +46,9 @@
                         @if ($exam->display_mode === 'one_at_a_time' && ! $exam->allow_back_navigation)
                             <p>You cannot go back to a previous question once you continue.</p>
                             <p>Each question must be answered before you can move to the next one.</p>
+                        @endif
+                        @if ($exam->usesPerQuestionTimer())
+                            <p>Each question has its own timer and will move on automatically when the allocated seconds run out.</p>
                         @endif
                         @if ($exam->time_limit_minutes)
                             <p>Time limit: {{ $exam->time_limit_minutes }} minutes</p>
@@ -162,7 +168,14 @@
                                         <p class="mt-2 text-sm leading-6 text-slate-600">{{ $question->help_text }}</p>
                                     @endif
                                 </div>
-                                <div class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{{ $question->formattedPoints() }} pts</div>
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    @if ($this->questionTimerEnabled && $this->currentQuestionTimeRemaining !== null)
+                                        <div class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800">
+                                            <span x-text="`Moves on in ${formatDuration(questionTimeRemaining)}`">Moves on in {{ gmdate('H:i:s', $this->currentQuestionTimeRemaining) }}</span>
+                                        </div>
+                                    @endif
+                                    <div class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{{ $question->formattedPoints() }} pts</div>
+                                </div>
                             </div>
 
                             @if ($question->isMultipleChoice())

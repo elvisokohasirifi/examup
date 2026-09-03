@@ -1,5 +1,10 @@
 @php
-    $value = old($field['name'], $field['value'] ?? $field['default'] ?? false);
+    $oldKey = str($field['name'])
+        ->replace('[', '.')
+        ->replace(']', '')
+        ->trim('.')
+        ->toString();
+    $value = old($oldKey, $field['value'] ?? $field['default'] ?? false);
     $isChecked = filter_var($value, FILTER_VALIDATE_BOOL);
     $fieldId = 'exam-boolean-toggle-'.str_replace(['[', ']'], '-', $field['name']);
 @endphp

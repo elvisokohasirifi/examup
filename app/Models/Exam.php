@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Arr;
 
 class Exam extends Model
 {
@@ -115,5 +116,12 @@ class Exam extends Model
     public function hasExpired(): bool
     {
         return $this->expires_at !== null && $this->expires_at->isPast();
+    }
+
+    public function usesPerQuestionTimer(): bool
+    {
+        return $this->display_mode === 'one_at_a_time'
+            && ! $this->allow_back_navigation
+            && filter_var(Arr::get($this->settings, 'enable_per_question_timer', false), FILTER_VALIDATE_BOOL);
     }
 }

@@ -11,6 +11,7 @@ use App\Models\ExamAccessLink;
 use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\SuspiciousActivity;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -85,6 +86,7 @@ class TakeExam extends Component
         if ($this->attempt !== null) {
             $this->rememberAttempt();
             $this->restoreAttemptState();
+            $this->syncAttemptTiming();
 
             if (! $this->attempt->isFinished() && $this->attempt->expires_at?->isPast()) {
                 $this->attempt = $submitExamAttempt->handle($this->attempt, true);
@@ -147,6 +149,7 @@ class TakeExam extends Component
 
         $this->attempt = $startExamAttempt->handle($this->accessLink, $this->candidate, request());
         $this->rememberAttempt();
+        $this->initializeCurrentQuestionTimer(true);
         $this->dispatch(
             'exam-attempt-started',
             attemptId: $this->attempt->id,
@@ -183,6 +186,7 @@ class TakeExam extends Component
         $this->resumableAttempt = null;
         $this->rememberAttempt();
         $this->restoreAttemptState();
+        $this->syncAttemptTiming();
         $this->dispatch(
             'exam-attempt-started',
             attemptId: $this->attempt->id,
@@ -233,6 +237,7 @@ class TakeExam extends Component
         $this->saveCurrentQuestion($saveExamAnswer);
         $this->currentQuestionIndex = min($this->currentQuestionIndex + 1, max($this->questions->count() - 1, 0));
         $this->persistCurrentQuestionIndex();
+        $this->initializeCurrentQuestionTimer(true);
     }
 
     public function refreshAttemptState(SubmitExamAttemptAction $submitExamAttempt): void
@@ -246,7 +251,31 @@ class TakeExam extends Component
 
         if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
             $this->submitExam($submitExamAttempt, true);
+
+            return;
         }
+
+        $this->advanceExpiredQuestionTimer(app(SaveExamAnswerAction::class), $submitExamAttempt);
+    }
+
+    public function handleQuestionTimerExpired(
+        SaveExamAnswerAction $saveExamAnswer,
+        SubmitExamAttemptAction $submitExamAttempt,
+    ): void {
+        if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        $this->attempt->refresh();
+        $this->exam->refresh();
+
+        if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
+            $this->submitExam($submitExamAttempt, true);
+
+            return;
+        }
+
+        $this->advanceExpiredQuestionTimer($saveExamAnswer, $submitExamAttempt);
     }
 
     public function requestSubmission(): void
@@ -444,6 +473,38 @@ class TakeExam extends Component
         return max(now()->diffInSeconds($this->attempt->expires_at, false), 0);
     }
 
+    public function getQuestionTimerEnabledProperty(): bool
+    {
+        return $this->attempt !== null
+            && ! $this->attempt->isFinished()
+            && $this->exam->usesPerQuestionTimer()
+            && $this->currentQuestion()?->timeLimitSeconds() !== null;
+    }
+
+    public function getCurrentQuestionExpiresAtProperty(): ?string
+    {
+        if (! $this->questionTimerEnabled) {
+            return null;
+        }
+
+        return $this->currentQuestionTimerExpiresAt()?->toIso8601String();
+    }
+
+    public function getCurrentQuestionTimeRemainingProperty(): ?int
+    {
+        if (! $this->questionTimerEnabled) {
+            return null;
+        }
+
+        $expiresAt = $this->currentQuestionTimerExpiresAt();
+
+        if ($expiresAt === null) {
+            return null;
+        }
+
+        return max(now()->diffInSeconds($expiresAt, false), 0);
+    }
+
     public function render()
     {
         return view('livewire.take-exam')
@@ -452,7 +513,7 @@ class TakeExam extends Component
 
     private function saveCurrentQuestion(SaveExamAnswerAction $saveExamAnswer): void
     {
-        $question = $this->questions->get($this->currentQuestionIndex);
+        $question = $this->currentQuestion();
 
         if ($question instanceof Question) {
             $this->saveResponseForQuestion($question->id, $saveExamAnswer);
@@ -668,6 +729,22 @@ class TakeExam extends Component
         );
     }
 
+    private function syncAttemptTiming(): void
+    {
+        if ($this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
+            return;
+        }
+
+        $this->advanceExpiredQuestionTimer(
+            app(SaveExamAnswerAction::class),
+            app(SubmitExamAttemptAction::class),
+        );
+    }
+
     private function persistCurrentQuestionIndex(): void
     {
         if ($this->attempt === null || $this->attempt->isFinished()) {
@@ -678,5 +755,101 @@ class TakeExam extends Component
         $meta['current_question_index'] = $this->currentQuestionIndex;
 
         $this->attempt->updateQuietly(['meta' => $meta]);
+    }
+
+    private function currentQuestion(): ?Question
+    {
+        $question = $this->questions->get($this->currentQuestionIndex);
+
+        return $question instanceof Question ? $question : null;
+    }
+
+    private function initializeCurrentQuestionTimer(bool $force = false): void
+    {
+        if (! $this->questionTimerEnabled || $this->attempt === null) {
+            return;
+        }
+
+        $question = $this->currentQuestion();
+
+        if (! $question instanceof Question) {
+            return;
+        }
+
+        $timeLimitSeconds = $question->timeLimitSeconds();
+
+        if ($timeLimitSeconds === null) {
+            return;
+        }
+
+        $meta = $this->attempt->meta ?? [];
+        $currentTimerQuestionId = data_get($meta, 'current_question_timer.question_id');
+        $currentTimerExpiresAt = data_get($meta, 'current_question_timer.expires_at');
+
+        if (
+            ! $force
+            && $currentTimerQuestionId === $question->id
+            && is_string($currentTimerExpiresAt)
+            && $currentTimerExpiresAt !== ''
+        ) {
+            return;
+        }
+
+        $meta['current_question_timer'] = [
+            'question_id' => $question->id,
+            'expires_at' => now()->addSeconds($timeLimitSeconds)->toIso8601String(),
+        ];
+
+        $this->attempt->updateQuietly(['meta' => $meta]);
+        $this->attempt->refresh();
+    }
+
+    private function advanceExpiredQuestionTimer(
+        SaveExamAnswerAction $saveExamAnswer,
+        SubmitExamAttemptAction $submitExamAttempt,
+    ): void {
+        if (! $this->questionTimerEnabled || $this->attempt === null || $this->attempt->isFinished()) {
+            return;
+        }
+
+        $lastQuestionIndex = max($this->questions->count() - 1, 0);
+
+        while ($this->questionTimerEnabled) {
+            $this->initializeCurrentQuestionTimer();
+
+            $expiresAt = $this->currentQuestionTimerExpiresAt();
+
+            if ($expiresAt === null || $expiresAt->isFuture()) {
+                return;
+            }
+
+            $this->saveCurrentQuestion($saveExamAnswer);
+
+            if ($this->currentQuestionIndex >= $lastQuestionIndex) {
+                $this->submitExam($submitExamAttempt, true);
+
+                return;
+            }
+
+            $this->currentQuestionIndex++;
+            $this->persistCurrentQuestionIndex();
+            $this->initializeCurrentQuestionTimer(true);
+            $this->resetErrorBag('currentQuestionResponse');
+        }
+    }
+
+    private function currentQuestionTimerExpiresAt(): ?Carbon
+    {
+        $expiresAt = data_get($this->attempt?->meta, 'current_question_timer.expires_at');
+
+        if (! is_string($expiresAt) || $expiresAt === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($expiresAt);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

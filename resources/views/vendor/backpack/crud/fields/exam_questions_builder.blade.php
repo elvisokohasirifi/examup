@@ -9,6 +9,7 @@
             'prompt' => '',
             'help_text' => '',
             'points' => '1',
+            'time_limit_seconds' => '',
             'allows_multiple_selection' => false,
             'accepted_answers' => '',
             'question_options' => [['id' => null, 'label' => '', 'is_correct' => false]],
@@ -123,18 +124,23 @@
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Type</label>
                             <select name="{{ $fieldName }}[{{ $questionIndex }}][type]" class="form-control" data-question-type>
                                 <option value="{{ Question::TYPE_MULTIPLE_CHOICE }}" @selected(($question['type'] ?? '') === Question::TYPE_MULTIPLE_CHOICE)>Multiple choice</option>
                                 <option value="{{ Question::TYPE_FILL_IN }}" @selected(($question['type'] ?? '') === Question::TYPE_FILL_IN)>Fill in</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Points</label>
                             <input type="number" step="0.25" min="0.25" name="{{ $fieldName }}[{{ $questionIndex }}][points]" value="{{ $question['points'] ?? '1' }}" class="form-control">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Time (seconds)</label>
+                            <input type="number" min="1" max="3600" name="{{ $fieldName }}[{{ $questionIndex }}][time_limit_seconds]" value="{{ $question['time_limit_seconds'] ?? '' }}" class="form-control">
+                            <div class="form-text">Required only when per-question timer is enabled.</div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="form-check mt-4 pt-2" data-multiple-selection-wrapper>
                                 <input type="hidden" name="{{ $fieldName }}[{{ $questionIndex }}][allows_multiple_selection]" value="0">
                                 <input type="checkbox" name="{{ $fieldName }}[{{ $questionIndex }}][allows_multiple_selection]" value="1" class="form-check-input" @checked(!empty($question['allows_multiple_selection']))>
@@ -230,18 +236,23 @@
                     <button type="button" class="btn btn-sm btn-outline-danger" data-remove-question-row>Remove question</button>
                 </div>
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Type</label>
                         <select name="{{ $fieldName }}[${index}][type]" class="form-control" data-question-type>
                             <option value="${multipleChoiceType}">Multiple choice</option>
                             <option value="${fillInType}">Fill in</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Points</label>
                         <input type="number" step="0.25" min="0.25" name="{{ $fieldName }}[${index}][points]" value="1" class="form-control">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Time (seconds)</label>
+                        <input type="number" min="1" max="3600" name="{{ $fieldName }}[${index}][time_limit_seconds]" value="" class="form-control">
+                        <div class="form-text">Required only when per-question timer is enabled.</div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-check mt-4 pt-2" data-multiple-selection-wrapper>
                             <input type="hidden" name="{{ $fieldName }}[${index}][allows_multiple_selection]" value="0">
                             <input type="checkbox" name="{{ $fieldName }}[${index}][allows_multiple_selection]" value="1" class="form-check-input">
@@ -474,13 +485,16 @@
 
                 const row = questionRows.querySelectorAll('[data-question-row]')[questionIndex];
                 const questionType = row.querySelector('[data-question-type]');
-                const points = row.querySelector('input[type="number"]');
+                const numericInputs = row.querySelectorAll('input[type="number"]');
+                const points = numericInputs[0];
+                const timeLimitSeconds = numericInputs[1];
                 const textareas = row.querySelectorAll('textarea');
                 const multipleSelection = row.querySelector('[data-multiple-selection-wrapper] input[type="checkbox"]');
                 const optionsHolder = row.querySelector('[data-option-rows]');
 
                 questionType.value = question.type;
                 points.value = question.points;
+                timeLimitSeconds.value = question.timeLimitSeconds ?? '';
                 textareas[0].value = question.prompt;
                 textareas[1].value = question.helpText;
                 textareas[2].value = question.acceptedAnswers.join('\n');

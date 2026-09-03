@@ -84,6 +84,19 @@ class Question extends Model
             ->values();
     }
 
+    public function timeLimitSeconds(): ?int
+    {
+        $timeLimitSeconds = Arr::get($this->settings, 'time_limit_seconds');
+
+        if (! is_numeric($timeLimitSeconds)) {
+            return null;
+        }
+
+        $timeLimitSeconds = (int) $timeLimitSeconds;
+
+        return $timeLimitSeconds >= 1 ? $timeLimitSeconds : null;
+    }
+
     public function setAcceptedAnswersAttribute(mixed $value): void
     {
         if (is_string($value)) {

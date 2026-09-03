@@ -47,6 +47,8 @@ class StoreExamRequest extends FormRequest
             'instructions' => ['nullable', 'string'],
             'display_mode' => ['required', Rule::in(['all', 'one_at_a_time'])],
             'allow_back_navigation' => ['boolean'],
+            'settings' => ['nullable', 'array'],
+            'settings.enable_per_question_timer' => ['boolean'],
             'shuffle_questions' => ['boolean'],
             'questions_per_attempt' => ['nullable', 'integer', 'min:1'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
@@ -66,6 +68,7 @@ class StoreExamRequest extends FormRequest
             'questions.*.prompt' => ['required', 'string'],
             'questions.*.help_text' => ['nullable', 'string'],
             'questions.*.points' => ['required', 'numeric', 'min:0.25'],
+            'questions.*.time_limit_seconds' => ['nullable', 'integer', 'min:1', 'max:3600'],
             'questions.*.allows_multiple_selection' => ['nullable', 'boolean'],
             'questions.*.accepted_answers' => ['nullable', 'array'],
             'questions.*.accepted_answers.*' => ['required', 'string', 'max:255'],
@@ -126,6 +129,9 @@ class StoreExamRequest extends FormRequest
                     'prompt' => trim((string) ($question['prompt'] ?? '')),
                     'help_text' => trim((string) ($question['help_text'] ?? '')),
                     'points' => $question['points'] ?? null,
+                    'time_limit_seconds' => filled($question['time_limit_seconds'] ?? null)
+                        ? (int) $question['time_limit_seconds']
+                        : null,
                     'allows_multiple_selection' => filter_var($question['allows_multiple_selection'] ?? false, FILTER_VALIDATE_BOOL),
                     'accepted_answers' => collect($acceptedAnswers)
                         ->map(fn ($answer) => trim((string) $answer))
@@ -156,8 +162,13 @@ class StoreExamRequest extends FormRequest
             ])
             ->all();
 
+        $settings = [
+            'enable_per_question_timer' => filter_var($this->input('settings.enable_per_question_timer', false), FILTER_VALIDATE_BOOL),
+        ];
+
         $this->merge([
             ...$normalizedBooleanFields,
+            'settings' => $settings,
             'questions' => $normalizedQuestions,
         ]);
     }
@@ -168,13 +179,26 @@ class StoreExamRequest extends FormRequest
             function (Validator $validator): void {
                 $questionsPerAttempt = $this->integer('questions_per_attempt');
                 $questionCount = count($this->input('questions', []));
+                $perQuestionTimerEnabled = filter_var($this->input('settings.enable_per_question_timer', false), FILTER_VALIDATE_BOOL);
 
                 if ($questionsPerAttempt > $questionCount) {
                     $validator->errors()->add('questions_per_attempt', 'Questions shown per attempt cannot exceed the number of questions in the pool.');
                 }
 
+                if ($perQuestionTimerEnabled && $this->input('display_mode') !== 'one_at_a_time') {
+                    $validator->errors()->add('settings.enable_per_question_timer', 'Per-question timer is only available when questions are shown one at a time.');
+                }
+
+                if ($perQuestionTimerEnabled && filter_var($this->input('allow_back_navigation', true), FILTER_VALIDATE_BOOL)) {
+                    $validator->errors()->add('settings.enable_per_question_timer', 'Per-question timer requires back navigation to be disabled.');
+                }
+
                 foreach ($this->input('questions', []) as $index => $question) {
                     $questionNumber = $index + 1;
+
+                    if ($perQuestionTimerEnabled && ! filled($question['time_limit_seconds'] ?? null)) {
+                        $validator->errors()->add("questions.$index.time_limit_seconds", "Question {$questionNumber} needs a time limit in seconds when the per-question timer is enabled.");
+                    }
 
                     if (($question['type'] ?? null) === Question::TYPE_MULTIPLE_CHOICE) {
                         $options = collect($question['question_options'] ?? []);

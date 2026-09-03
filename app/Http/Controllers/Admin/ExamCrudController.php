@@ -121,7 +121,7 @@ class ExamCrudController extends CrudController
         CRUD::setRequest(CRUD::validateRequest());
         CRUD::getRequest()->request->set('created_by', backpack_user()->id);
         $response = $this->traitStore();
-        $this->syncQuestions(CRUD::getCurrentEntry(), CRUD::getRequest());
+        $this->syncExamConfiguration(CRUD::getCurrentEntry(), CRUD::getRequest());
 
         return $response;
     }
@@ -130,7 +130,7 @@ class ExamCrudController extends CrudController
     {
         CRUD::setRequest(CRUD::validateRequest());
         $response = $this->traitUpdate();
-        $this->syncQuestions(CRUD::getCurrentEntry(), CRUD::getRequest());
+        $this->syncExamConfiguration(CRUD::getCurrentEntry(), CRUD::getRequest());
 
         return $response;
     }
@@ -200,6 +200,12 @@ class ExamCrudController extends CrudController
             'Allow students to go back to previous questions',
             $entry?->allow_back_navigation ?? true,
         );
+        $this->addExamBooleanField(
+            'settings[enable_per_question_timer]',
+            'Enable per-question timer when backtracking is disabled',
+            (bool) data_get($entry?->settings, 'enable_per_question_timer', false),
+            'Each question advances automatically when its own time runs out. This only applies to one-question-at-a-time exams with back navigation disabled.',
+        );
         CRUD::addField([
             'name' => 'shuffle_questions',
             'label' => 'Question order',
@@ -249,6 +255,7 @@ class ExamCrudController extends CrudController
                     'prompt' => $question->prompt,
                     'help_text' => $question->help_text,
                     'points' => $question->points,
+                    'time_limit_seconds' => $question->timeLimitSeconds(),
                     'allows_multiple_selection' => $question->allows_multiple_selection,
                     'accepted_answers' => implode(PHP_EOL, $question->accepted_answers ?? []),
                     'question_options' => $question->options->map(fn (QuestionOption $option): array => [
@@ -268,7 +275,7 @@ class ExamCrudController extends CrudController
         ]);
     }
 
-    protected function addExamBooleanField(string $name, string $label, bool $value): void
+    protected function addExamBooleanField(string $name, string $label, bool $value, ?string $hint = null): void
     {
         CRUD::addField([
             'name' => $name,
@@ -276,6 +283,7 @@ class ExamCrudController extends CrudController
             'type' => 'view',
             'view' => 'vendor.backpack.crud.fields.exam_boolean_toggle',
             'value' => $value,
+            'hint' => $hint,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
     }
@@ -299,6 +307,11 @@ class ExamCrudController extends CrudController
                     'accepted_answers' => $questionData['type'] === Question::TYPE_FILL_IN
                         ? $questionData['accepted_answers']
                         : [],
+                    'settings' => array_filter([
+                        'time_limit_seconds' => filled($questionData['time_limit_seconds'] ?? null)
+                            ? (int) $questionData['time_limit_seconds']
+                            : null,
+                    ], fn (mixed $value): bool => $value !== null),
                 ],
             );
 
@@ -330,5 +343,14 @@ class ExamCrudController extends CrudController
         }
 
         $exam->questions()->whereNotIn('id', $keptQuestionIds)->delete();
+    }
+
+    protected function syncExamConfiguration(Exam $exam, Request $request): void
+    {
+        $exam->update([
+            'settings' => $request->input('settings', []),
+        ]);
+
+        $this->syncQuestions($exam, $request);
     }
 }
