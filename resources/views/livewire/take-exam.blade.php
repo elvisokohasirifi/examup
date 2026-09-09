@@ -20,17 +20,24 @@
                 @endif
             </div>
 
-            @if ($attempt)
-                <div class="rounded-2xl bg-slate-950 px-4 py-3 text-sm text-white">
-                    <div class="font-semibold">Status: {{ str_replace('_', ' ', $attempt->status) }}</div>
-                    @if ($this->timeRemaining !== null && ! $attempt->isFinished())
-                        <div x-show="timeRemaining !== null" class="text-amber-300">Time remaining: <span x-text="formatDuration(timeRemaining)">{{ gmdate('H:i:s', $this->timeRemaining) }}</span></div>
-                    @endif
-                    @if ($this->currentQuestionTimeRemaining !== null && ! $attempt->isFinished())
-                        <div x-show="questionTimeRemaining !== null" class="text-sky-300">Question timer: <span x-text="formatDuration(questionTimeRemaining)">{{ gmdate('H:i:s', $this->currentQuestionTimeRemaining) }}</span></div>
-                    @endif
+            <div class="flex flex-wrap items-stretch gap-3">
+                <div data-network-status role="status" aria-live="polite" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    <div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Network status</div>
+                    <div class="mt-1 font-semibold text-slate-900"><span x-text="networkStatus">Checking connection</span> <span aria-hidden="true">&middot;</span> <span x-text="networkStrength">Checking</span></div>
+                    <div x-show="networkDetail" x-text="networkDetail" class="mt-1 max-w-64 text-xs leading-5 text-slate-500"></div>
                 </div>
-            @endif
+                @if ($attempt)
+                    <div class="rounded-2xl bg-slate-950 px-4 py-3 text-sm text-white">
+                        <div class="font-semibold">Status: {{ str_replace('_', ' ', $attempt->status) }}</div>
+                        @if ($this->timeRemaining !== null && ! $attempt->isFinished())
+                            <div x-show="timeRemaining !== null" class="text-amber-300">Time remaining: <span x-text="formatDuration(timeRemaining)">{{ gmdate('H:i:s', $this->timeRemaining) }}</span></div>
+                        @endif
+                        @if ($this->currentQuestionTimeRemaining !== null && ! $attempt->isFinished())
+                            <div x-show="questionTimeRemaining !== null" class="text-sky-300">Question timer: <span x-text="formatDuration(questionTimeRemaining)">{{ gmdate('H:i:s', $this->currentQuestionTimeRemaining) }}</span></div>
+                        @endif
+                    </div>
+                @endif
+            </div>
         </div>
 
         @if (! $attempt)

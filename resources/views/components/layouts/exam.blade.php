@@ -27,6 +27,10 @@
             secondsUntilFullscreenSubmission: 0,
             timeRemaining: null,
             questionTimeRemaining: null,
+            networkStatus: 'Checking connection',
+            networkStrength: 'Checking',
+            networkDetail: '',
+            networkConnection: null,
             examUrl: window.location.href,
             historyGuardEnabled: false,
             isLeavingExam: false,
@@ -36,6 +40,9 @@
                 this.setExamCountdown(this.expiresAt);
                 this.syncQuestionTimer(this.questionExpiresAt, this.questionTimerEnabled, this.attemptActive);
                 this.fullscreenUnsupported = this.requireFullscreen && !this.supportsFullscreen();
+                this.networkConnection = navigator.connection ?? navigator.mozConnection ?? navigator.webkitConnection ?? null;
+                this.onNetworkChange = () => this.updateNetworkStatus();
+                this.updateNetworkStatus();
 
                 this.onVisibilityChange = () => {
                     if (document.hidden) {
@@ -95,6 +102,9 @@
                 document.addEventListener('fullscreenchange', this.onFullscreenChange);
                 window.addEventListener('exam-attempt-started', this.onExamAttemptStarted);
                 window.addEventListener('popstate', this.onPopState);
+                window.addEventListener('online', this.onNetworkChange);
+                window.addEventListener('offline', this.onNetworkChange);
+                this.networkConnection?.addEventListener('change', this.onNetworkChange);
 
                 if (this.attemptActive) {
                     this.enableHistoryGuard();
@@ -109,9 +119,46 @@
                 document.removeEventListener('fullscreenchange', this.onFullscreenChange);
                 window.removeEventListener('exam-attempt-started', this.onExamAttemptStarted);
                 window.removeEventListener('popstate', this.onPopState);
+                window.removeEventListener('online', this.onNetworkChange);
+                window.removeEventListener('offline', this.onNetworkChange);
+                this.networkConnection?.removeEventListener('change', this.onNetworkChange);
                 this.clearExamCountdown();
                 this.clearQuestionCountdown();
                 this.clearFullscreenExitCountdown();
+            },
+
+            updateNetworkStatus() {
+                if (!navigator.onLine) {
+                    this.networkStatus = 'Offline';
+                    this.networkStrength = 'Unavailable';
+                    this.networkDetail = 'Reconnect to continue saving answers.';
+
+                    return;
+                }
+
+                this.networkStatus = 'Online';
+
+                if (!this.networkConnection) {
+                    this.networkStrength = 'Unavailable';
+                    this.networkDetail = 'Connection strength is not available in this browser.';
+
+                    return;
+                }
+
+                const effectiveType = this.networkConnection.effectiveType;
+                const downlink = Number(this.networkConnection.downlink);
+
+                if (['slow-2g', '2g'].includes(effectiveType) || (Number.isFinite(downlink) && downlink < 1)) {
+                    this.networkStrength = 'Weak';
+                } else if (effectiveType === '3g' || (Number.isFinite(downlink) && downlink < 5)) {
+                    this.networkStrength = 'Moderate';
+                } else {
+                    this.networkStrength = 'Strong';
+                }
+
+                const connectionType = this.networkConnection.type ?? effectiveType?.toUpperCase() ?? 'network';
+                const estimatedSpeed = Number.isFinite(downlink) ? `Estimated ${downlink} Mbps` : 'Speed estimate unavailable';
+                this.networkDetail = `${connectionType} connection. ${estimatedSpeed}.`;
             },
 
             enableHistoryGuard() {

@@ -54,6 +54,8 @@ test('student can start and submit an exam from a secure link', function () {
         'accessToken' => $link->access_token,
     ])
         ->assertSee('whitespace-pre-line', false)
+        ->assertSee('Network status')
+        ->assertSee('Checking connection')
         ->set('candidate.student_name', 'Student One')
         ->set('candidate.student_email', 'student@example.com')
         ->set('candidate.student_index_number', 'IDX-001')
