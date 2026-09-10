@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AllowExamRetakeController;
 use App\Http\Controllers\Admin\Auth\GoogleLoginController;
 use App\Http\Controllers\Admin\BulkAllowExamRetakeController;
@@ -34,6 +35,7 @@ Route::group([
     ),
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
+    Route::get('dashboard', AdminDashboardController::class)->name('backpack.dashboard');
     Route::get('help', HelpController::class)->name('admin.help');
     Route::get('exam/questions/sample.txt', [ExamCrudController::class, 'downloadQuestionImportSample'])
         ->name('admin.exams.questions.sample');

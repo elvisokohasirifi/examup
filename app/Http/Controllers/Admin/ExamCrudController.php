@@ -72,6 +72,8 @@ class ExamCrudController extends CrudController
         ]);
         CRUD::column('is_published')->type('boolean')->label('Published');
         CRUD::button('preview')->stack('line')->view('vendor.backpack.crud.buttons.exam_preview');
+        CRUD::button('manage_access')->stack('line')->view('vendor.backpack.crud.buttons.exam_manage_access');
+        CRUD::button('view_results')->stack('line')->view('vendor.backpack.crud.buttons.exam_view_results');
     }
 
     public function setupCreateOperation(): void

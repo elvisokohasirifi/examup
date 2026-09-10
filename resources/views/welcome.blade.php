@@ -54,8 +54,8 @@
 
                             <div class="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#536477]">
                                 <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> No student accounts</span>
-                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Auto-graded</span>
-                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Ready to share</span>
+                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Question banks</span>
+                                <span class="inline-flex items-center gap-2"><span class="text-[#1e9c89]">&#10003;</span> Secure sharing</span>
                             </div>
                         </div>
 
@@ -103,10 +103,10 @@
                         </div>
 
                         <div class="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <article class="rounded-[1.7rem] bg-[#243b53] p-6 text-white shadow-xl shadow-[#243b53]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/12 text-2xl">&#9998;</span><h3 class="mt-8 font-serif text-2xl font-bold">Create</h3><p class="mt-2 text-sm leading-6 text-[#d5e2ec]">Question cards, points, choices, and TXT imports.</p></article>
-                            <article class="rounded-[1.7rem] bg-[#ffd166] p-6 text-[#243b53] shadow-xl shadow-[#d89a21]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#128279;</span><h3 class="mt-8 font-serif text-2xl font-bold">Invite</h3><p class="mt-2 text-sm leading-6 text-[#654b16]">Share one link or send personal email access.</p></article>
-                            <article class="rounded-[1.7rem] bg-[#72dacf] p-6 text-[#173e44] shadow-xl shadow-[#1e9c89]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#9201;</span><h3 class="mt-8 font-serif text-2xl font-bold">Deliver</h3><p class="mt-2 text-sm leading-6 text-[#28555a]">Timed sessions, auto-save, shuffle, and controls.</p></article>
-                            <article class="rounded-[1.7rem] bg-[#eeeaff] p-6 text-[#3f356c] shadow-xl shadow-[#9d8df2]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/60 text-2xl">&#128200;</span><h3 class="mt-8 font-serif text-2xl font-bold">Understand</h3><p class="mt-2 text-sm leading-6 text-[#615889]">Scores, answers, trends, and CSV exports.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#243b53] p-6 text-white shadow-xl shadow-[#243b53]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/12 text-2xl">&#9998;</span><h3 class="mt-8 font-serif text-2xl font-bold">Build</h3><p class="mt-2 text-sm leading-6 text-[#d5e2ec]">Question cards, answer choices, and TXT imports.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#ffd166] p-6 text-[#243b53] shadow-xl shadow-[#d89a21]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#127922;</span><h3 class="mt-8 font-serif text-2xl font-bold">Randomize</h3><p class="mt-2 text-sm leading-6 text-[#654b16]">Draw a fresh, fair exam from a question bank.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#72dacf] p-6 text-[#173e44] shadow-xl shadow-[#1e9c89]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/45 text-2xl">&#9201;</span><h3 class="mt-8 font-serif text-2xl font-bold">Deliver</h3><p class="mt-2 text-sm leading-6 text-[#28555a]">Personal links, timers, auto-save, and retakes.</p></article>
+                            <article class="rounded-[1.7rem] bg-[#eeeaff] p-6 text-[#3f356c] shadow-xl shadow-[#9d8df2]/10 transition duration-200 hover:-translate-y-1"><span class="grid size-12 place-items-center rounded-2xl bg-white/60 text-2xl">&#128200;</span><h3 class="mt-8 font-serif text-2xl font-bold">Review</h3><p class="mt-2 text-sm leading-6 text-[#615889]">Answers, scores, activity logs, and CSV exports.</p></article>
                         </div>
 
                         <div class="mt-5 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
@@ -119,7 +119,7 @@
                                 </div>
                             </article>
 
-                            <article class="rounded-[1.8rem] bg-[#f26d5b] p-6 text-white shadow-xl shadow-[#f26d5b]/15 sm:p-8"><span class="grid size-12 place-items-center rounded-2xl bg-white/15 text-2xl">&#128274;</span><h3 class="mt-7 font-serif text-3xl font-bold">Secure by design.</h3><p class="mt-3 max-w-sm text-sm leading-6 text-[#fff0ed]">Expiry rules, suspicious activity logs, copy-paste deterrents, and private invite links.</p></article>
+                            <article class="rounded-[1.8rem] bg-[#f26d5b] p-6 text-white shadow-xl shadow-[#f26d5b]/15 sm:p-8"><span class="grid size-12 place-items-center rounded-2xl bg-white/15 text-2xl">&#128274;</span><h3 class="mt-7 font-serif text-3xl font-bold">Secure by design.</h3><p class="mt-3 max-w-sm text-sm leading-6 text-[#fff0ed]">Expiry rules, fullscreen checks, clipboard deterrents, and suspicious activity logging.</p></article>
                         </div>
                     </section>
 
