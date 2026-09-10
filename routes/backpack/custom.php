@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ExamAttemptReviewController;
 use App\Http\Controllers\Admin\ExamCrudController;
 use App\Http\Controllers\Admin\ExamResultsController;
 use App\Http\Controllers\Admin\HelpController;
+use App\Http\Controllers\Admin\MicrosoftFormsImportController;
 use App\Http\Controllers\Admin\RegradeExamAttemptsController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +38,10 @@ Route::group([
 ], function () { // custom admin routes
     Route::get('dashboard', AdminDashboardController::class)->name('backpack.dashboard');
     Route::get('help', HelpController::class)->name('admin.help');
+    Route::get('exam/import/microsoft-forms', [MicrosoftFormsImportController::class, 'create'])
+        ->name('admin.exams.import.microsoft-forms');
+    Route::post('exam/import/microsoft-forms', [MicrosoftFormsImportController::class, 'store'])
+        ->name('admin.exams.import.microsoft-forms.store');
     Route::get('exam/questions/sample.txt', [ExamCrudController::class, 'downloadQuestionImportSample'])
         ->name('admin.exams.questions.sample');
     Route::crud('exam', ExamCrudController::class);

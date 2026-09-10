@@ -71,6 +71,7 @@ class ExamCrudController extends CrudController
                 ->count(),
         ]);
         CRUD::column('is_published')->type('boolean')->label('Published');
+        CRUD::button('import_microsoft_forms')->stack('top')->view('vendor.backpack.crud.buttons.import_microsoft_forms');
         CRUD::button('preview')->stack('line')->view('vendor.backpack.crud.buttons.exam_preview');
         CRUD::button('manage_access')->stack('line')->view('vendor.backpack.crud.buttons.exam_manage_access');
         CRUD::button('view_results')->stack('line')->view('vendor.backpack.crud.buttons.exam_view_results');
