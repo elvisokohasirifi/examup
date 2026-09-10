@@ -46,7 +46,9 @@ test('examiner dashboard only includes their exams and activity', function () {
         ->assertSee('Exam overview')
         ->assertSee('My live exam')
         ->assertSee('Ama Boateng')
-        ->assertDontSee('Another live exam');
+        ->assertDontSee('Another live exam')
+        ->assertSee('https://www.clarity.ms/tag/', false)
+        ->assertSee("'yg9r5l61hg'", false);
 });
 
 test('landing page highlights the latest exam features', function () {

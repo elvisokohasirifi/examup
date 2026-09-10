@@ -71,6 +71,20 @@ test('student can start and submit an exam from a secure link', function () {
         ->assertSee('1 / 1');
 });
 
+test('the public exam page loads Microsoft Clarity', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create(['created_by' => $examiner->id]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $this->get($link->examUrl())
+        ->assertOk()
+        ->assertSee('https://www.clarity.ms/tag/', false)
+        ->assertSee("'yg9r5l61hg'", false);
+});
+
 test('an active exam warns the student before browser back navigation', function () {
     $examiner = User::factory()->create();
     $exam = Exam::factory()->create([
