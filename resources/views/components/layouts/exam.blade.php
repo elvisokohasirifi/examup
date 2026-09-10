@@ -16,17 +16,24 @@
             requireFullscreen: options.requireFullscreen ?? false,
             expiresAt: options.expiresAt ?? null,
             attemptActive: options.attemptActive ?? false,
+            attemptId: options.attemptId ?? null,
+            autosaveIntervalSeconds: options.autosaveIntervalSeconds ?? 15,
             questionExpiresAt: options.questionExpiresAt ?? null,
             questionTimerEnabled: options.questionTimerEnabled ?? false,
             fullscreenUnsupported: false,
-            lastReportedAt: 0,
+            reportedAt: {},
             countdownInterval: null,
             questionCountdownInterval: null,
+            draftAutosaveInterval: null,
             fullscreenExitTimeout: null,
             fullscreenExitInterval: null,
             secondsUntilFullscreenSubmission: 0,
             timeRemaining: null,
             questionTimeRemaining: null,
+            draftStatus: 'Saving answers securely',
+            navigationPending: false,
+            draftSyncPending: false,
+            examTimerSubmissionPending: false,
             networkStatus: 'Checking connection',
             networkStrength: 'Checking',
             networkDetail: '',
@@ -41,7 +48,13 @@
                 this.syncQuestionTimer(this.questionExpiresAt, this.questionTimerEnabled, this.attemptActive);
                 this.fullscreenUnsupported = this.requireFullscreen && !this.supportsFullscreen();
                 this.networkConnection = navigator.connection ?? navigator.mozConnection ?? navigator.webkitConnection ?? null;
-                this.onNetworkChange = () => this.updateNetworkStatus();
+                this.onNetworkChange = () => {
+                    this.updateNetworkStatus();
+
+                    if (navigator.onLine) {
+                        this.syncDraft();
+                    }
+                };
                 this.updateNetworkStatus();
 
                 this.onVisibilityChange = () => {
@@ -83,8 +96,11 @@
                 };
                 this.onExamAttemptStarted = ({ detail }) => {
                     this.attemptActive = true;
+                    this.attemptId = detail.attemptId ?? this.attemptId;
                     this.setExamCountdown(detail.expiresAt ?? null);
                     this.enableHistoryGuard();
+                    this.restoreDraft();
+                    this.startDraftAutosave();
                 };
                 this.onPopState = () => {
                     if (!this.historyGuardEnabled || this.isLeavingExam) {
@@ -108,6 +124,8 @@
 
                 if (this.attemptActive) {
                     this.enableHistoryGuard();
+                    this.restoreDraft();
+                    this.startDraftAutosave();
                 }
             },
 
@@ -124,6 +142,7 @@
                 this.networkConnection?.removeEventListener('change', this.onNetworkChange);
                 this.clearExamCountdown();
                 this.clearQuestionCountdown();
+                this.clearDraftAutosave();
                 this.clearFullscreenExitCountdown();
             },
 
@@ -198,6 +217,14 @@
 
                 const updateCountdown = () => {
                     this.timeRemaining = Math.max(0, Math.ceil((expiresAtTimestamp - Date.now()) / 1000));
+
+                    if (this.timeRemaining === 0 && this.attemptActive && !this.examTimerSubmissionPending) {
+                        this.examTimerSubmissionPending = true;
+                        this.$wire.syncAndSubmitForTimeLimit(this.collectDraft()).catch(() => {
+                            this.draftStatus = 'Saved on this device. Reconnect to finish submitting.';
+                            this.examTimerSubmissionPending = false;
+                        });
+                    }
                 };
 
                 updateCountdown();
@@ -250,7 +277,7 @@
                     this.questionTimerSubmissionPending = true;
 
                     try {
-                        await this.$wire.handleQuestionTimerExpired();
+                        await this.$wire.syncAndHandleQuestionTimerExpired(this.collectDraft());
                     } finally {
                         this.questionTimerSubmissionPending = false;
                     }
@@ -268,6 +295,177 @@
 
                 this.questionTimeRemaining = null;
                 this.questionTimerSubmissionPending = false;
+            },
+
+            draftStorageKey() {
+                return this.attemptId ? `examup:attempt:${this.attemptId}:responses` : null;
+            },
+
+            readDraft() {
+                const key = this.draftStorageKey();
+
+                if (!key) {
+                    return {};
+                }
+
+                try {
+                    const draft = JSON.parse(window.localStorage.getItem(key) ?? '{}');
+
+                    return draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : {};
+                } catch (_) {
+                    return {};
+                }
+            },
+
+            saveDraft() {
+                const key = this.draftStorageKey();
+
+                if (!key) {
+                    return {};
+                }
+
+                const draft = this.readDraft();
+
+                this.$root.querySelectorAll('[data-exam-response]').forEach((input) => {
+                    const questionId = input.dataset.questionId;
+                    const responseType = input.dataset.responseType;
+
+                    if (!questionId || !responseType) {
+                        return;
+                    }
+
+                    draft[questionId] ??= {};
+
+                    if (responseType === 'multiple') {
+                        draft[questionId].selected_options ??= {};
+                        draft[questionId].selected_options[input.dataset.optionId] = input.checked;
+                    } else if (responseType === 'single' && input.checked) {
+                        draft[questionId].selected_option_id = input.value;
+                    } else if (responseType === 'text') {
+                        draft[questionId].answer_text = input.value;
+                    }
+                });
+
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(draft));
+                    this.draftStatus = navigator.onLine ? 'Answers saved on this device' : 'Saved on this device. Reconnect to sync.';
+                } catch (_) {
+                    this.draftStatus = 'Your browser could not save a local backup.';
+                }
+
+                return draft;
+            },
+
+            collectDraft() {
+                return this.saveDraft();
+            },
+
+            restoreDraft() {
+                const draft = this.readDraft();
+
+                if (Object.keys(draft).length === 0) {
+                    return;
+                }
+
+                this.$root.querySelectorAll('[data-exam-response]').forEach((input) => {
+                    const response = draft[input.dataset.questionId] ?? {};
+
+                    if (input.dataset.responseType === 'multiple') {
+                        input.checked = Boolean(response.selected_options?.[input.dataset.optionId]);
+                    } else if (input.dataset.responseType === 'single') {
+                        input.checked = response.selected_option_id === input.value;
+                    } else if (input.dataset.responseType === 'text') {
+                        input.value = response.answer_text ?? '';
+                    }
+                });
+
+                this.draftStatus = 'Restored answers saved on this device';
+                this.syncDraft();
+            },
+
+            clearDraft() {
+                const key = this.draftStorageKey();
+
+                if (key) {
+                    window.localStorage.removeItem(key);
+                }
+            },
+
+            startDraftAutosave() {
+                this.clearDraftAutosave();
+
+                if (!this.attemptActive) {
+                    return;
+                }
+
+                this.draftAutosaveInterval = window.setInterval(() => this.syncDraft(), Math.max(Number(this.autosaveIntervalSeconds) || 15, 5) * 1000);
+            },
+
+            clearDraftAutosave() {
+                if (this.draftAutosaveInterval !== null) {
+                    window.clearInterval(this.draftAutosaveInterval);
+                    this.draftAutosaveInterval = null;
+                }
+            },
+
+            async syncDraft() {
+                const responses = this.collectDraft();
+
+                if (!this.attemptActive || !navigator.onLine || this.draftSyncPending || Object.keys(responses).length === 0) {
+                    return false;
+                }
+
+                this.draftSyncPending = true;
+
+                try {
+                    await this.$wire.syncResponses(responses);
+                    this.draftStatus = 'Answers synchronized';
+
+                    return true;
+                } catch (_) {
+                    this.draftStatus = 'Saved on this device. Retrying when connected.';
+
+                    return false;
+                } finally {
+                    this.draftSyncPending = false;
+                }
+            },
+
+            async nextQuestion() {
+                await this.navigateWithDraft('syncAndNext');
+            },
+
+            async previousQuestion() {
+                await this.navigateWithDraft('syncAndPrevious');
+            },
+
+            async requestSubmission() {
+                await this.navigateWithDraft('syncAndRequestSubmission');
+            },
+
+            async submitExam() {
+                await this.navigateWithDraft('syncAndSubmit');
+            },
+
+            async navigateWithDraft(method) {
+                const responses = this.collectDraft();
+
+                if (!navigator.onLine) {
+                    this.draftStatus = 'Saved on this device. Reconnect before continuing.';
+
+                    return;
+                }
+
+                this.navigationPending = true;
+
+                try {
+                    await this.$wire[method](responses);
+                    this.draftStatus = 'Answers synchronized';
+                } catch (_) {
+                    this.draftStatus = 'Saved on this device. Retrying when connected.';
+                } finally {
+                    this.navigationPending = false;
+                }
             },
 
             formatDuration(seconds) {
@@ -386,7 +584,7 @@
                 }, 1000);
                 this.fullscreenExitTimeout = window.setTimeout(() => {
                     this.clearFullscreenExitCountdown();
-                    this.$wire.submitForFullscreenExit();
+                    this.$wire.syncAndSubmitForFullscreenExit(this.collectDraft());
                 }, 15000);
             },
 
@@ -405,11 +603,13 @@
             },
 
             report(eventType, bypassCooldown = false, clipboardText = null, clipboardTypes = []) {
-                if (!bypassCooldown && Date.now() - this.lastReportedAt < 10000) {
+                const lastReportedAt = this.reportedAt[eventType] ?? 0;
+
+                if (!bypassCooldown && Date.now() - lastReportedAt < 10000) {
                     return;
                 }
 
-                this.lastReportedAt = Date.now();
+                this.reportedAt[eventType] = Date.now();
                 return this.$wire.logClientEvent(eventType, clipboardText, clipboardTypes).catch(() => {});
             },
         });

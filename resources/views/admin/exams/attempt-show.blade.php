@@ -28,6 +28,9 @@
                 <dt class="col-sm-5">Completed</dt><dd class="col-sm-7">{{ $attempt->submitted_at?->format('M j, Y g:i:s A') ?: '-' }}</dd>
                 <dt class="col-sm-5">Duration</dt><dd class="col-sm-7">{{ $attempt->duration_seconds !== null ? \Carbon\CarbonInterval::seconds($attempt->duration_seconds)->cascade()->forHumans() : '-' }}</dd>
                 <dt class="col-sm-5">Status</dt><dd class="col-sm-7 text-capitalize">{{ str_replace('_', ' ', $attempt->status) }}</dd>
+                @if ($attempt->automaticSubmissionReasonLabel())
+                    <dt class="col-sm-5">Auto-submit reason</dt><dd class="col-sm-7">{{ $attempt->automaticSubmissionReasonLabel() }}</dd>
+                @endif
             </dl>
         </div></div>
     </div>

@@ -102,6 +102,7 @@
                                 <th>Email</th>
                                 <th>Index number</th>
                                 <th>Status</th>
+                                <th>Auto-submit reason</th>
                                 <th>Score</th>
                                 <th>Suspicious activity</th>
                                 <th>Submitted</th>
@@ -124,6 +125,7 @@
                                     <td>{{ $attempt->student_email ?: '-' }}</td>
                                     <td>{{ $attempt->student_index_number ?: '-' }}</td>
                                     <td>{{ str_replace('_', ' ', $attempt->status) }}</td>
+                                    <td>{{ $attempt->automaticSubmissionReasonLabel() ?: '-' }}</td>
                                     <td>{{ $attempt->formattedScore() }} / {{ $attempt->formattedMaxScore() }} ({{ $attempt->formattedScorePercentage() }}%)</td>
                                     <td>{{ $attempt->suspicious_activities_count }}</td>
                                     <td>{{ $attempt->submitted_at?->format('M j, Y g:i A') ?: '-' }}</td>
@@ -143,7 +145,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted">No exam attempts yet.</td>
+                                    <td colspan="10" class="text-center text-muted">No exam attempts yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

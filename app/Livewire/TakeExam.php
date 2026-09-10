@@ -89,7 +89,11 @@ class TakeExam extends Component
             $this->syncAttemptTiming();
 
             if (! $this->attempt->isFinished() && $this->attempt->expires_at?->isPast()) {
-                $this->attempt = $submitExamAttempt->handle($this->attempt, true);
+                $this->attempt = $submitExamAttempt->handle(
+                    $this->attempt,
+                    true,
+                    $this->automaticExpiryReason(),
+                );
                 $this->submitted = true;
             }
 
@@ -240,6 +244,88 @@ class TakeExam extends Component
         $this->initializeCurrentQuestionTimer(true);
     }
 
+    /**
+     * Save the complete browser draft before changing questions so weak connections cannot
+     * race the answer selection against the Next request.
+     *
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndNext(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->nextQuestion(app(SaveExamAnswerAction::class));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndPrevious(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->previousQuestion(app(SaveExamAnswerAction::class));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncResponses(array $responses): void
+    {
+        $this->replaceResponses($responses);
+
+        foreach ($this->questions as $question) {
+            $this->saveResponseForQuestion($question->id, app(SaveExamAnswerAction::class));
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndRequestSubmission(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->requestSubmission();
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndSubmit(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->submitExam(app(SubmitExamAttemptAction::class));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndHandleQuestionTimerExpired(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->handleQuestionTimerExpired(app(SaveExamAnswerAction::class), app(SubmitExamAttemptAction::class));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndSubmitForFullscreenExit(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->submitForFullscreenExit(app(SubmitExamAttemptAction::class));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    public function syncAndSubmitForTimeLimit(array $responses): void
+    {
+        $this->replaceResponses($responses);
+        $this->submitExam(
+            app(SubmitExamAttemptAction::class),
+            true,
+            ExamAttempt::AUTO_SUBMISSION_REASON_TIME_LIMIT_EXPIRED,
+        );
+    }
+
     public function refreshAttemptState(SubmitExamAttemptAction $submitExamAttempt): void
     {
         if ($this->attempt === null || $this->attempt->isFinished()) {
@@ -250,7 +336,7 @@ class TakeExam extends Component
         $this->exam->refresh();
 
         if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
-            $this->submitExam($submitExamAttempt, true);
+            $this->submitExam($submitExamAttempt, true, $this->automaticExpiryReason());
 
             return;
         }
@@ -270,7 +356,7 @@ class TakeExam extends Component
         $this->exam->refresh();
 
         if ($this->attempt->expires_at?->isPast() || $this->exam->hasExpired()) {
-            $this->submitExam($submitExamAttempt, true);
+            $this->submitExam($submitExamAttempt, true, $this->automaticExpiryReason());
 
             return;
         }
@@ -356,11 +442,20 @@ class TakeExam extends Component
             return;
         }
 
-        $this->submitExam($submitExamAttempt, true);
+        $this->submitExam(
+            $submitExamAttempt,
+            true,
+            $this->fullscreenUnsupported
+                ? ExamAttempt::AUTO_SUBMISSION_REASON_TAB_OR_APP_SWITCH
+                : ExamAttempt::AUTO_SUBMISSION_REASON_FULLSCREEN_EXIT,
+        );
     }
 
-    public function submitExam(SubmitExamAttemptAction $submitExamAttempt, bool $automatic = false): void
-    {
+    public function submitExam(
+        SubmitExamAttemptAction $submitExamAttempt,
+        bool $automatic = false,
+        ?string $automaticReason = null,
+    ): void {
         if ($this->attempt === null || $this->attempt->isFinished()) {
             return;
         }
@@ -382,7 +477,7 @@ class TakeExam extends Component
         }
 
         $this->resetErrorBag('currentQuestionResponse');
-        $this->attempt = $submitExamAttempt->handle($this->attempt, $automatic);
+        $this->attempt = $submitExamAttempt->handle($this->attempt, $automatic, $automaticReason);
         $this->submitted = true;
         $this->dispatch('exam-submitted');
     }
@@ -529,6 +624,53 @@ class TakeExam extends Component
         }
 
         $saveExamAnswer->handle($this->attempt, $question, $this->payloadForQuestion($question));
+    }
+
+    /**
+     * @param  array<string, mixed>  $responses
+     */
+    private function replaceResponses(array $responses): void
+    {
+        $normalizedResponses = [];
+
+        foreach ($this->questions as $question) {
+            $response = $responses[$question->id] ?? [];
+
+            if (! is_array($response)) {
+                continue;
+            }
+
+            if ($question->isMultipleChoice()) {
+                $validOptionIds = $question->options->pluck('id')->map(fn (string $id): string => (string) $id);
+
+                if ($question->allows_multiple_selection) {
+                    $selectedOptions = collect($response['selected_options'] ?? [])
+                        ->filter(fn (mixed $isSelected): bool => filter_var($isSelected, FILTER_VALIDATE_BOOL))
+                        ->keys()
+                        ->map(fn (mixed $optionId): string => (string) $optionId)
+                        ->filter(fn (string $optionId): bool => $validOptionIds->contains($optionId))
+                        ->mapWithKeys(fn (string $optionId): array => [$optionId => true])
+                        ->all();
+
+                    $normalizedResponses[$question->id] = ['selected_options' => $selectedOptions];
+
+                    continue;
+                }
+
+                $selectedOptionId = (string) ($response['selected_option_id'] ?? '');
+                $normalizedResponses[$question->id] = [
+                    'selected_option_id' => $validOptionIds->contains($selectedOptionId) ? $selectedOptionId : '',
+                ];
+
+                continue;
+            }
+
+            $normalizedResponses[$question->id] = [
+                'answer_text' => Str::substr((string) ($response['answer_text'] ?? ''), 0, 10000),
+            ];
+        }
+
+        $this->responses = $normalizedResponses;
     }
 
     /**
@@ -683,6 +825,13 @@ class TakeExam extends Component
         return true;
     }
 
+    private function automaticExpiryReason(): string
+    {
+        return $this->exam->hasExpired()
+            ? ExamAttempt::AUTO_SUBMISSION_REASON_EXAM_EXPIRED
+            : ExamAttempt::AUTO_SUBMISSION_REASON_TIME_LIMIT_EXPIRED;
+    }
+
     private function attemptSessionKey(): string
     {
         return 'exam_attempts.'.$this->accessLink->id;
@@ -826,7 +975,11 @@ class TakeExam extends Component
             $this->saveCurrentQuestion($saveExamAnswer);
 
             if ($this->currentQuestionIndex >= $lastQuestionIndex) {
-                $this->submitExam($submitExamAttempt, true);
+                $this->submitExam(
+                    $submitExamAttempt,
+                    true,
+                    ExamAttempt::AUTO_SUBMISSION_REASON_QUESTION_TIME_EXPIRED,
+                );
 
                 return;
             }

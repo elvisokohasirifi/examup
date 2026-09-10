@@ -19,7 +19,11 @@ class AutoSubmitExpiredExamAttemptsAction
             ->cursor();
 
         foreach ($expiredAttempts as $expiredAttempt) {
-            $attempt = $this->submitExamAttempt->handle($expiredAttempt, true);
+            $attempt = $this->submitExamAttempt->handle(
+                $expiredAttempt,
+                true,
+                ExamAttempt::AUTO_SUBMISSION_REASON_TIME_LIMIT_EXPIRED,
+            );
 
             if ($attempt->status === ExamAttempt::STATUS_AUTO_SUBMITTED) {
                 $submittedCount++;

@@ -28,6 +28,16 @@ class ExamAttempt extends Model
 
     public const STATUS_AUTO_SUBMITTED = 'auto_submitted';
 
+    public const AUTO_SUBMISSION_REASON_TIME_LIMIT_EXPIRED = 'time_limit_expired';
+
+    public const AUTO_SUBMISSION_REASON_EXAM_EXPIRED = 'exam_expired';
+
+    public const AUTO_SUBMISSION_REASON_QUESTION_TIME_EXPIRED = 'question_time_expired';
+
+    public const AUTO_SUBMISSION_REASON_FULLSCREEN_EXIT = 'fullscreen_exit';
+
+    public const AUTO_SUBMISSION_REASON_TAB_OR_APP_SWITCH = 'tab_or_app_switch';
+
     protected $fillable = [
         'exam_id',
         'exam_access_link_id',
@@ -95,6 +105,25 @@ class ExamAttempt extends Model
     public function isSuperseded(): bool
     {
         return $this->superseded_at !== null;
+    }
+
+    public function automaticSubmissionReason(): ?string
+    {
+        $reason = data_get($this->meta, 'auto_submission_reason');
+
+        return is_string($reason) && $reason !== '' ? $reason : null;
+    }
+
+    public function automaticSubmissionReasonLabel(): ?string
+    {
+        return match ($this->automaticSubmissionReason()) {
+            self::AUTO_SUBMISSION_REASON_TIME_LIMIT_EXPIRED => 'Overall time limit expired',
+            self::AUTO_SUBMISSION_REASON_EXAM_EXPIRED => 'Exam availability expired',
+            self::AUTO_SUBMISSION_REASON_QUESTION_TIME_EXPIRED => 'Final question timer expired',
+            self::AUTO_SUBMISSION_REASON_FULLSCREEN_EXIT => 'Fullscreen was exited',
+            self::AUTO_SUBMISSION_REASON_TAB_OR_APP_SWITCH => 'Exam tab or app was left',
+            default => null,
+        };
     }
 
     public function scopeCurrent(Builder $query): void

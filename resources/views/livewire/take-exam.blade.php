@@ -1,4 +1,4 @@
-<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()), questionExpiresAt: @js($this->currentQuestionExpiresAt), questionTimerEnabled: @js($this->questionTimerEnabled) })" x-effect="syncQuestionTimer(@js($this->currentQuestionExpiresAt), @js($this->questionTimerEnabled), @js($attempt !== null && ! $attempt->isFinished()))" x-on:exam-navigation-confirmed.window="leaveExam()" x-on:exam-submitted.window="disableHistoryGuard()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
+<div x-data="examActivityMonitor({ disableCopyPaste: @js($exam->disable_copy_paste), requireFullscreen: @js($exam->require_fullscreen), expiresAt: @js($attempt?->expires_at?->toIso8601String()), attemptActive: @js($attempt !== null && ! $attempt->isFinished()), attemptId: @js($attempt?->id), autosaveIntervalSeconds: @js($exam->autosave_interval_seconds), questionExpiresAt: @js($this->currentQuestionExpiresAt), questionTimerEnabled: @js($this->questionTimerEnabled) })" x-effect="syncQuestionTimer(@js($this->currentQuestionExpiresAt), @js($this->questionTimerEnabled), @js($attempt !== null && ! $attempt->isFinished()))" x-on:exam-navigation-confirmed.window="leaveExam()" x-on:exam-submitted.window="disableHistoryGuard(); clearDraft()" class="mx-auto max-w-5xl px-4 py-8" wire:poll.10s="refreshAttemptState">
     <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur">
         @if ($isUnavailable)
             <div class="mx-auto flex max-w-xl flex-col items-center py-10 text-center sm:py-16">
@@ -29,6 +29,9 @@
                 @if ($attempt)
                     <div class="rounded-2xl bg-slate-950 px-4 py-3 text-sm text-white">
                         <div class="font-semibold">Status: {{ str_replace('_', ' ', $attempt->status) }}</div>
+                        @if (! $attempt->isFinished())
+                            <div class="mt-1 text-xs text-slate-300" x-text="draftStatus">Saving answers securely</div>
+                        @endif
                         @if ($this->timeRemaining !== null && ! $attempt->isFinished())
                             <div x-show="timeRemaining !== null" class="text-amber-300">Time remaining: <span x-text="formatDuration(timeRemaining)">{{ gmdate('H:i:s', $this->timeRemaining) }}</span></div>
                         @endif
@@ -66,10 +69,11 @@
                                 This browser cannot enter fullscreen mode. You may continue, but leaving this exam tab or switching apps will automatically submit your exam after 15 seconds.
                             </div>
                         @endif
+                        <p>Activity such as tab switches, focus changes, copy, and paste is recorded for exam integrity.</p>
                         @if ($exam->expires_at)
                             <p>Available until: {{ $exam->expires_at->format('M j, Y g:i A') }}</p>
                         @endif
-                        <p>Autosave: every response is saved as you type or select.</p>
+                        <p>Autosave: answers are kept on this device and synchronized together every {{ $exam->autosave_interval_seconds }} seconds when you are online.</p>
                     </div>
                 </div>
 
@@ -150,7 +154,7 @@
                             </div>
                         @endif
                         <div>
-                            <button type="button" wire:click="requestSubmission" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Submit exam</button>
+                            <button type="button" x-on:click="requestSubmission()" x-bind:disabled="navigationPending" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">Submit exam</button>
                         </div>
                     </div>
 
@@ -192,14 +196,23 @@
                                             @if ($question->allows_multiple_selection)
                                                 <input
                                                     type="checkbox"
-                                                    wire:model.live="responses.{{ $question->id }}.selected_options.{{ $option->id }}"
+                                                    wire:model="responses.{{ $question->id }}.selected_options.{{ $option->id }}"
+                                                    data-exam-response
+                                                    data-question-id="{{ $question->id }}"
+                                                    data-response-type="multiple"
+                                                    data-option-id="{{ $option->id }}"
+                                                    x-on:change="saveDraft()"
                                                     class="mt-1 size-4 border-slate-300 text-amber-500 focus:ring-amber-400"
                                                 />
                                             @else
                                                 <input
                                                     type="radio"
-                                                    wire:model.live="responses.{{ $question->id }}.selected_option_id"
+                                                    wire:model="responses.{{ $question->id }}.selected_option_id"
                                                     value="{{ $option->id }}"
+                                                    data-exam-response
+                                                    data-question-id="{{ $question->id }}"
+                                                    data-response-type="single"
+                                                    x-on:change="saveDraft()"
                                                     class="mt-1 size-4 border-slate-300 text-amber-500 focus:ring-amber-400"
                                                 />
                                             @endif
@@ -209,8 +222,12 @@
                                 </div>
                             @else
                                 <textarea
-                                    wire:model.live.debounce.700ms="responses.{{ $question->id }}.answer_text"
+                                    wire:model="responses.{{ $question->id }}.answer_text"
                                     rows="5"
+                                    data-exam-response
+                                    data-question-id="{{ $question->id }}"
+                                    data-response-type="text"
+                                    x-on:input.debounce.300ms="saveDraft()"
                                     class="mt-6 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-800 outline-none focus:border-amber-400"
                                     placeholder="Type your answer here"
                                 ></textarea>
@@ -220,11 +237,11 @@
                                 <div class="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
                                     <div>
                                         @if ($exam->allow_back_navigation && $currentQuestionIndex > 0)
-                                            <button type="button" wire:click="previousQuestion" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">Previous</button>
+                                            <button type="button" x-on:click="previousQuestion()" x-bind:disabled="navigationPending" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">Previous</button>
                                         @endif
                                     </div>
                                     @if ($currentQuestionIndex < max($this->questions->count() - 1, 0))
-                                        <button type="button" wire:click="nextQuestion" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Next</button>
+                                        <button type="button" x-on:click="nextQuestion()" x-bind:disabled="navigationPending" class="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"><span x-text="navigationPending ? 'Saving...' : 'Next'">Next</span></button>
                                     @endif
                                 </div>
                             @endif
@@ -264,7 +281,7 @@
                 <p class="mt-3 text-sm leading-6 text-slate-600">Your answers will be submitted and you will not be able to edit them afterwards.</p>
                 <div class="mt-6 flex flex-wrap justify-end gap-3">
                     <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
-                    <button type="button" wire:click="submitExam" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">Yes, submit exam</button>
+                    <button type="button" x-on:click="submitExam()" x-bind:disabled="navigationPending" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">Yes, submit exam</button>
                 </div>
             </div>
         </div>

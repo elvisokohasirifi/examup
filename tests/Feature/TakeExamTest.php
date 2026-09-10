@@ -635,6 +635,76 @@ test('students cannot go back and must answer each question before proceeding wh
         ->assertSee($secondQuestion->prompt);
 });
 
+test('next saves the complete response draft before advancing', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'display_mode' => 'one_at_a_time',
+        'allow_back_navigation' => false,
+        'show_index_number_field' => false,
+    ]);
+    $firstQuestion = Question::factory()->create([
+        'exam_id' => $exam->id,
+        'type' => Question::TYPE_MULTIPLE_CHOICE,
+        'position' => 1,
+    ]);
+    $firstOption = QuestionOption::factory()->create([
+        'question_id' => $firstQuestion->id,
+        'label' => 'First answer',
+        'is_correct' => true,
+    ]);
+    Question::factory()->fillIn()->create([
+        'exam_id' => $exam->id,
+        'position' => 2,
+        'accepted_answers' => ['Laravel'],
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    $component = Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('syncAndNext', [
+            $firstQuestion->id => ['selected_option_id' => $firstOption->id],
+        ])
+        ->assertSet('currentQuestionIndex', 1);
+
+    $this->assertDatabaseHas('exam_answers', [
+        'exam_attempt_id' => $component->get('attempt.id'),
+        'question_id' => $firstQuestion->id,
+    ]);
+});
+
+test('activity is logged even when fullscreen is not required', function () {
+    $examiner = User::factory()->create();
+    $exam = Exam::factory()->create([
+        'created_by' => $examiner->id,
+        'require_fullscreen' => false,
+        'show_index_number_field' => false,
+    ]);
+    $link = ExamAccessLink::factory()->create([
+        'exam_id' => $exam->id,
+        'created_by' => $examiner->id,
+    ]);
+
+    Livewire::test(TakeExam::class, [
+        'publicKey' => $link->public_key,
+        'accessToken' => $link->access_token,
+    ])
+        ->set('candidate.student_name', 'Student One')
+        ->set('candidate.student_email', 'student@example.com')
+        ->call('startAttempt', app(StartExamAttemptAction::class))
+        ->call('logClientEvent', 'tab_hidden');
+
+    expect(SuspiciousActivity::query()->where('event_type', 'tab_hidden')->exists())->toBeTrue();
+});
+
 test('per-question timer advances to the next question and auto-submits the last question when time runs out', function () {
     $examiner = User::factory()->create();
 
@@ -707,4 +777,6 @@ test('per-question timer advances to the next question and auto-submits the last
         'id' => $attemptId,
         'status' => ExamAttempt::STATUS_AUTO_SUBMITTED,
     ]);
+    expect(ExamAttempt::query()->findOrFail($attemptId)->automaticSubmissionReason())
+        ->toBe(ExamAttempt::AUTO_SUBMISSION_REASON_QUESTION_TIME_EXPIRED);
 });

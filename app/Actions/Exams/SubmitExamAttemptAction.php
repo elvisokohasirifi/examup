@@ -10,9 +10,9 @@ use Illuminate\Support\Str;
 
 class SubmitExamAttemptAction
 {
-    public function handle(ExamAttempt $attempt, bool $automatic = false): ExamAttempt
+    public function handle(ExamAttempt $attempt, bool $automatic = false, ?string $automaticReason = null): ExamAttempt
     {
-        return DB::transaction(function () use ($attempt, $automatic): ExamAttempt {
+        return DB::transaction(function () use ($attempt, $automatic, $automaticReason): ExamAttempt {
             $attempt = ExamAttempt::query()
                 ->lockForUpdate()
                 ->findOrFail($attempt->id);
@@ -25,6 +25,11 @@ class SubmitExamAttemptAction
 
             $startedAt = $attempt->started_at ?? $attempt->created_at;
             $submittedAt = now();
+            $meta = $attempt->meta ?? [];
+
+            if ($automatic && filled($automaticReason)) {
+                $meta['auto_submission_reason'] = $automaticReason;
+            }
 
             $attempt->update([
                 'status' => $automatic ? ExamAttempt::STATUS_AUTO_SUBMITTED : ExamAttempt::STATUS_SUBMITTED,
@@ -34,6 +39,7 @@ class SubmitExamAttemptAction
                 'score' => $totalScore,
                 'max_score' => $maxScore,
                 'score_percentage' => $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0,
+                'meta' => $meta,
             ]);
 
             $this->supersedeReplacedAttempt($attempt);
