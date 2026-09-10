@@ -279,6 +279,22 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Final check</p>
                 <h2 id="submit-confirmation-title" class="mt-2 text-2xl font-semibold text-slate-900">Submit your exam?</h2>
                 <p class="mt-3 text-sm leading-6 text-slate-600">Your answers will be submitted and you will not be able to edit them afterwards.</p>
+                <div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <label class="flex items-start gap-3 text-sm leading-6 text-slate-700">
+                        <input type="checkbox" wire:model="honorCodeAccepted" class="mt-1 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-400" />
+                        <span>I affirm that I did not cheat during this exam and will not tolerate cheating by others. <span class="font-semibold text-red-700">Required</span></span>
+                    </label>
+                    @error('honorCodeAccepted')
+                        <p class="mt-3 text-sm font-medium text-red-700">{{ $message }}</p>
+                    @enderror
+                </div>
+                <label class="mt-5 block text-sm font-medium text-slate-700">
+                    Confidential integrity disclosure <span class="font-normal text-slate-500">(optional)</span>
+                    <textarea wire:model="honorCodeDisclosure" rows="4" maxlength="5000" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none focus:border-amber-400" placeholder="If you cheated or witnessed suspected cheating, describe what happened."></textarea>
+                </label>
+                @error('honorCodeDisclosure')
+                    <p class="mt-2 text-sm font-medium text-red-700">{{ $message }}</p>
+                @enderror
                 <div class="mt-6 flex flex-wrap justify-end gap-3">
                     <button type="button" wire:click="cancelSubmission" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Keep reviewing</button>
                     <button type="button" x-on:click="submitExam()" x-bind:disabled="navigationPending" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">Yes, submit exam</button>

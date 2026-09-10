@@ -44,6 +44,10 @@ class TakeExam extends Component
 
     public bool $showSubmitConfirmation = false;
 
+    public bool $honorCodeAccepted = false;
+
+    public string $honorCodeDisclosure = '';
+
     public bool $showFullscreenExitWarning = false;
 
     public bool $showNavigationWarning = false;
@@ -468,6 +472,20 @@ class TakeExam extends Component
             $this->addError('currentQuestionResponse', $message);
 
             return;
+        }
+
+        if (! $automatic) {
+            $this->validate([
+                'honorCodeAccepted' => ['accepted'],
+                'honorCodeDisclosure' => ['nullable', 'string', 'max:5000'],
+            ], [
+                'honorCodeAccepted.accepted' => 'You must accept the honor code before submitting your exam.',
+            ]);
+
+            $this->attempt->update([
+                'honor_code_accepted_at' => now(),
+                'honor_code_disclosure' => filled($this->honorCodeDisclosure) ? trim($this->honorCodeDisclosure) : null,
+            ]);
         }
 
         $this->showSubmitConfirmation = false;

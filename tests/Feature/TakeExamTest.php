@@ -65,10 +65,20 @@ test('student can start and submit an exam from a secure link', function () {
         ->call('requestSubmission')
         ->assertSet('showSubmitConfirmation', true)
         ->assertSee('Your answers will be submitted and you will not be able to edit them afterwards.')
+        ->assertSee('I affirm that I did not cheat during this exam')
+        ->call('submitExam', app(SubmitExamAttemptAction::class))
+        ->assertHasErrors(['honorCodeAccepted'])
+        ->set('honorCodeAccepted', true)
+        ->set('honorCodeDisclosure', 'I observed another candidate using notes during the exam.')
         ->call('submitExam', app(SubmitExamAttemptAction::class))
         ->assertSee('Exam submitted')
         ->assertSee('Your answer: Correct option')
         ->assertSee('1 / 1');
+
+    expect(ExamAttempt::query()->sole()->honor_code_accepted_at)
+        ->not->toBeNull()
+        ->and(ExamAttempt::query()->sole()->honor_code_disclosure)
+        ->toBe('I observed another candidate using notes during the exam.');
 });
 
 test('the public exam page loads Microsoft Clarity', function () {
@@ -183,6 +193,7 @@ test('multiple-choice selections are tracked independently for each option', fun
         ->call('startAttempt', app(StartExamAttemptAction::class))
         ->set("responses.{$question->id}.selected_options.{$selectedOption->id}", true)
         ->assertSet("responses.{$question->id}.selected_options.{$selectedOption->id}", true)
+        ->set('honorCodeAccepted', true)
         ->call('submitExam', app(SubmitExamAttemptAction::class));
 
     $answer = ExamAnswer::query()

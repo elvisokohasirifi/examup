@@ -50,6 +50,26 @@
 
 <div class="card mb-4">
     <div class="card-body">
+        <h4 class="card-title">Honor code</h4>
+        @if ($attempt->honor_code_accepted_at)
+            <p class="mb-2 text-success">Accepted on {{ $attempt->honor_code_accepted_at->format('M j, Y g:i:s A') }}</p>
+        @else
+            <p class="mb-2 text-muted">Not confirmed. This may occur when the exam was automatically submitted.</p>
+        @endif
+
+        @if ($attempt->honor_code_disclosure)
+            <div class="mt-3 rounded border border-warning-subtle bg-warning-subtle p-3">
+                <div class="fw-semibold">Confidential integrity disclosure</div>
+                <p class="mb-0 mt-2 text-break" style="white-space: pre-line">{{ $attempt->honor_code_disclosure }}</p>
+            </div>
+        @else
+            <p class="mb-0 text-muted">No integrity disclosure was provided.</p>
+        @endif
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
         <h4 class="card-title">Suspicious activity</h4>
         @forelse ($attempt->suspiciousActivities as $activity)
             <div class="border-bottom pb-3 mb-3">

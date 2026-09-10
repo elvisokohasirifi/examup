@@ -52,6 +52,8 @@ test('an exam owner can review a completed students answers, grading, and activi
         'max_score' => 2,
         'score_percentage' => 100,
         'ip_address' => '127.0.0.1',
+        'honor_code_accepted_at' => now(),
+        'honor_code_disclosure' => 'I saw another candidate consult notes during the exam.',
     ]);
 
     ExamAnswer::factory()->create([
@@ -88,7 +90,11 @@ test('an exam owner can review a completed students answers, grading, and activi
         ->assertSee('paste')
         ->assertSee('Clipboard activity was detected.')
         ->assertSee('Clipboard content')
-        ->assertSee('A pasted answer');
+        ->assertSee('A pasted answer')
+        ->assertSee('Honor code')
+        ->assertSee('Accepted on')
+        ->assertSee('Confidential integrity disclosure')
+        ->assertSee('I saw another candidate consult notes during the exam.');
 });
 
 test('an attempt cannot be reviewed through another exam', function () {
