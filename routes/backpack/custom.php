@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AllowExamRetakeController;
 use App\Http\Controllers\Admin\Auth\GoogleLoginController;
 use App\Http\Controllers\Admin\BulkAllowExamRetakeController;
+use App\Http\Controllers\Admin\BulkAssignDepartmentController;
+use App\Http\Controllers\Admin\DepartmentCrudController;
 use App\Http\Controllers\Admin\ExamAccessController;
 use App\Http\Controllers\Admin\ExamAttemptCsvController;
 use App\Http\Controllers\Admin\ExamAttemptReviewController;
@@ -37,6 +39,9 @@ Route::group([
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
     Route::get('dashboard', AdminDashboardController::class)->name('backpack.dashboard');
+    Route::get('user/assign-department', [BulkAssignDepartmentController::class, 'create'])->name('admin.users.assign-department');
+    Route::post('user/assign-department', [BulkAssignDepartmentController::class, 'store'])->name('admin.users.assign-department.store');
+    Route::crud('department', DepartmentCrudController::class);
     Route::get('help', HelpController::class)->name('admin.help');
     Route::get('exam/import/microsoft-forms', [MicrosoftFormsImportController::class, 'create'])
         ->name('admin.exams.import.microsoft-forms');

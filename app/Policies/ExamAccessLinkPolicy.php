@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Exam;
 use App\Models\ExamAccessLink;
 use App\Models\User;
 
@@ -20,7 +21,7 @@ class ExamAccessLinkPolicy
      */
     public function view(User $user, ExamAccessLink $examAccessLink): bool
     {
-        return $user->isAdmin() || $examAccessLink->exam->created_by === $user->id;
+        return $user->can('view', $examAccessLink->exam);
     }
 
     /**
@@ -28,7 +29,7 @@ class ExamAccessLinkPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isExaminer();
+        return $user->can('create', Exam::class);
     }
 
     /**
@@ -36,7 +37,7 @@ class ExamAccessLinkPolicy
      */
     public function update(User $user, ExamAccessLink $examAccessLink): bool
     {
-        return $user->isAdmin() || $examAccessLink->exam->created_by === $user->id;
+        return $user->can('update', $examAccessLink->exam);
     }
 
     /**
@@ -44,7 +45,7 @@ class ExamAccessLinkPolicy
      */
     public function delete(User $user, ExamAccessLink $examAccessLink): bool
     {
-        return $user->isAdmin() || $examAccessLink->exam->created_by === $user->id;
+        return $user->can('update', $examAccessLink->exam);
     }
 
     /**

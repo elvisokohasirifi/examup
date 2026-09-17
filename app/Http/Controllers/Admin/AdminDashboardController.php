@@ -77,8 +77,6 @@ class AdminDashboardController extends Controller
      */
     private function scopeExamQuery(Builder $query, User $user): void
     {
-        if ($user->isExaminer()) {
-            $query->where('created_by', $user->id);
-        }
+        $query->visibleTo($user);
     }
 }

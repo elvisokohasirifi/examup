@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
 use App\Models\Concerns\UsesUuid;
+use App\Support\Tenancy;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -26,7 +28,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'google_id'])]
+#[Fillable(['name', 'email', 'password', 'role', 'google_id', 'organization_id', 'department_id', 'is_platform_admin', 'is_department_admin'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -64,6 +66,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_platform_admin' => 'boolean',
+            'is_department_admin' => 'boolean',
             'password' => 'hashed',
         ];
     }
@@ -85,6 +89,16 @@ class User extends Authenticatable
         return $this->hasMany(Exam::class, 'created_by');
     }
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
     public function canAccessBackOffice(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_EXAMINER], true);
@@ -93,6 +107,36 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return (bool) $this->is_platform_admin;
+    }
+
+    public function isOrganizationAdmin(): bool
+    {
+        return $this->isAdmin() && ! $this->isPlatformAdmin();
+    }
+
+    public function isDepartmentAdmin(): bool
+    {
+        return (bool) $this->is_department_admin && $this->department_id !== null;
+    }
+
+    public function canManageUsers(): bool
+    {
+        if (! Tenancy::enabled()) {
+            return $this->isAdmin();
+        }
+
+        return $this->isPlatformAdmin() || $this->isOrganizationAdmin() || $this->isDepartmentAdmin();
+    }
+
+    public function canManageDepartments(): bool
+    {
+        return Tenancy::enabled()
+            && ($this->isPlatformAdmin() || $this->isOrganizationAdmin());
     }
 
     public function isExaminer(): bool

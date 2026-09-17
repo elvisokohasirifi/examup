@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Exams\ImportExamQuestionsFromTextAction;
 use App\Http\Requests\StoreExamRequest;
+use App\Models\Department;
 use App\Models\Exam;
+use App\Models\Organization;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Support\Tenancy;
 use Backpack\ActivityLog\Http\Controllers\Operations\EntryActivityOperation;
 use Backpack\ActivityLog\Http\Controllers\Operations\ModelActivityOperation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -37,7 +40,15 @@ class ExamCrudController extends CrudController
         CRUD::setEntityNameStrings('exam', 'exams');
         CRUD::with(['questions.options']);
 
-        if (backpack_user()->isExaminer()) {
+        if (Tenancy::enabled()) {
+            if (! backpack_user()->isPlatformAdmin()) {
+                CRUD::addClause('where', 'organization_id', backpack_user()->organization_id);
+            }
+
+            if (! backpack_user()->isOrganizationAdmin() && ! backpack_user()->isPlatformAdmin()) {
+                CRUD::addClause('where', 'department_id', backpack_user()->department_id);
+            }
+        } elseif (backpack_user()->isExaminer()) {
             CRUD::addClause('where', 'created_by', backpack_user()->id);
         }
     }
@@ -123,6 +134,7 @@ class ExamCrudController extends CrudController
     {
         CRUD::setRequest(CRUD::validateRequest());
         CRUD::getRequest()->request->set('created_by', backpack_user()->id);
+        $this->applyTenantAssignment(CRUD::getRequest());
         $response = $this->traitStore();
         $this->syncExamConfiguration(CRUD::getCurrentEntry(), CRUD::getRequest());
 
@@ -132,6 +144,7 @@ class ExamCrudController extends CrudController
     public function update(): RedirectResponse
     {
         CRUD::setRequest(CRUD::validateRequest());
+        $this->applyTenantAssignment(CRUD::getRequest());
         $response = $this->traitUpdate();
         $this->syncExamConfiguration(CRUD::getCurrentEntry(), CRUD::getRequest());
 
@@ -179,6 +192,36 @@ class ExamCrudController extends CrudController
             'value' => view('vendor.backpack.crud.fields.exam_builder_intro')->render(),
             'wrapper' => false,
         ]);
+        if (Tenancy::enabled()) {
+            $actor = backpack_user();
+            $organizationId = $actor->isPlatformAdmin() ? null : $actor->organization_id;
+
+            if ($actor->isPlatformAdmin()) {
+                CRUD::addField([
+                    'name' => 'organization_id',
+                    'label' => 'Organisation',
+                    'type' => 'select_from_array',
+                    'options' => Organization::query()->orderBy('name')->pluck('name', 'id')->all(),
+                    'allows_null' => false,
+                    'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
+                ]);
+            } else {
+                CRUD::addField(['name' => 'organization_id', 'type' => 'hidden', 'value' => $organizationId]);
+            }
+
+            CRUD::addField([
+                'name' => 'department_id',
+                'label' => 'Department',
+                'type' => 'select_from_array',
+                'options' => Department::query()
+                    ->when($organizationId !== null, fn ($query) => $query->where('organization_id', $organizationId))
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all(),
+                'allows_null' => false,
+                'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
+            ]);
+        }
         CRUD::addField([
             'name' => 'created_by',
             'type' => 'hidden',
@@ -292,6 +335,23 @@ class ExamCrudController extends CrudController
             'hint' => $hint,
             'wrapper' => ['class' => 'form-group col-md-6 js-exam-step js-exam-step-1'],
         ]);
+    }
+
+    private function applyTenantAssignment(Request $request): void
+    {
+        if (! Tenancy::enabled()) {
+            return;
+        }
+
+        $actor = backpack_user();
+
+        if (! $actor->isPlatformAdmin()) {
+            $request->request->set('organization_id', $actor->organization_id);
+        }
+
+        if (! $actor->isOrganizationAdmin() && ! $actor->isPlatformAdmin()) {
+            $request->request->set('department_id', $actor->department_id);
+        }
     }
 
     protected function syncQuestions(Exam $exam, Request $request): void

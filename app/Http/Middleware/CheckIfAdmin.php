@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Tenancy;
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\RedirectResponse;
@@ -34,8 +35,16 @@ class CheckIfAdmin
             return false;
         }
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() && (! Tenancy::enabled() || $user->isPlatformAdmin())) {
             return true;
+        }
+
+        if ($request->is('admin/user') || $request->is('admin/user/*')) {
+            return $user->canManageUsers();
+        }
+
+        if ($request->is('admin/department') || $request->is('admin/department/*')) {
+            return $user->canManageDepartments();
         }
 
         $adminOnlyPrefixes = [

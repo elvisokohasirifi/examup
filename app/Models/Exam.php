@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
 use App\Models\Concerns\UsesUuid;
+use App\Support\Tenancy;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Database\Factories\ExamFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +26,8 @@ class Exam extends Model
 
     protected $fillable = [
         'created_by',
+        'organization_id',
+        'department_id',
         'title',
         'description',
         'instructions',
@@ -47,8 +51,15 @@ class Exam extends Model
     protected static function booted(): void
     {
         static::creating(function (Exam $exam): void {
+            $user = backpack_user() ?? auth()->user();
+
             if ($exam->created_by === null) {
-                $exam->created_by = backpack_user()?->id ?? auth()->id();
+                $exam->created_by = $user?->id;
+            }
+
+            if (Tenancy::enabled() && $user instanceof User) {
+                $exam->organization_id ??= $user->organization_id;
+                $exam->department_id ??= $user->department_id;
             }
         });
 
@@ -86,6 +97,43 @@ class Exam extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if (! Tenancy::enabled()) {
+            if ($user->isExaminer()) {
+                $query->where('created_by', $user->id);
+            }
+
+            return;
+        }
+
+        if ($user->isPlatformAdmin()) {
+            return;
+        }
+
+        $query->where('organization_id', $user->organization_id);
+
+        if (! $user->isOrganizationAdmin()) {
+            if ($user->department_id === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->where('department_id', $user->department_id);
+        }
     }
 
     public function questions(): HasMany

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Exam;
 use App\Models\User;
+use App\Support\Tenancy;
 
 class ExamPolicy
 {
@@ -20,6 +21,10 @@ class ExamPolicy
      */
     public function view(User $user, Exam $exam): bool
     {
+        if (Tenancy::enabled()) {
+            return $this->sharesVisibleTenant($user, $exam);
+        }
+
         return $user->isAdmin() || $exam->created_by === $user->id;
     }
 
@@ -36,6 +41,17 @@ class ExamPolicy
      */
     public function update(User $user, Exam $exam): bool
     {
+        if (Tenancy::enabled()) {
+            if (! $this->sharesVisibleTenant($user, $exam)) {
+                return false;
+            }
+
+            return $user->isPlatformAdmin()
+                || $user->isOrganizationAdmin()
+                || $user->isDepartmentAdmin()
+                || $exam->created_by === $user->id;
+        }
+
         return $user->isAdmin() || $exam->created_by === $user->id;
     }
 
@@ -60,6 +76,22 @@ class ExamPolicy
      */
     public function forceDelete(User $user, Exam $exam): bool
     {
-        return $user->isAdmin();
+        return Tenancy::enabled()
+            ? $user->isPlatformAdmin() || ($user->isOrganizationAdmin() && $user->organization_id === $exam->organization_id)
+            : $user->isAdmin();
+    }
+
+    private function sharesVisibleTenant(User $user, Exam $exam): bool
+    {
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
+
+        if ($user->organization_id === null || $user->organization_id !== $exam->organization_id) {
+            return false;
+        }
+
+        return $user->isOrganizationAdmin()
+            || ($user->department_id !== null && $user->department_id === $exam->department_id);
     }
 }

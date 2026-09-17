@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Exam;
 use App\Models\Question;
 use App\Models\User;
 
@@ -20,7 +21,7 @@ class QuestionPolicy
      */
     public function view(User $user, Question $question): bool
     {
-        return $user->isAdmin() || $question->exam->created_by === $user->id;
+        return $user->can('view', $question->exam);
     }
 
     /**
@@ -28,7 +29,7 @@ class QuestionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isExaminer();
+        return $user->can('create', Exam::class);
     }
 
     /**
@@ -36,7 +37,7 @@ class QuestionPolicy
      */
     public function update(User $user, Question $question): bool
     {
-        return $user->isAdmin() || $question->exam->created_by === $user->id;
+        return $user->can('update', $question->exam);
     }
 
     /**
@@ -44,7 +45,7 @@ class QuestionPolicy
      */
     public function delete(User $user, Question $question): bool
     {
-        return $user->isAdmin() || $question->exam->created_by === $user->id;
+        return $user->can('update', $question->exam);
     }
 
     /**

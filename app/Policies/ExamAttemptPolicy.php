@@ -20,7 +20,7 @@ class ExamAttemptPolicy
      */
     public function view(User $user, ExamAttempt $examAttempt): bool
     {
-        return $user->isAdmin() || $examAttempt->exam->created_by === $user->id;
+        return $user->can('view', $examAttempt->exam);
     }
 
     /**

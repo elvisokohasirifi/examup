@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Actions\Exams\ImportExamQuestionsFromTextAction;
+use App\Models\Department;
 use App\Models\Exam;
 use App\Models\Question;
+use App\Support\Tenancy;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -41,7 +43,7 @@ class StoreExamRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'instructions' => ['nullable', 'string'],
@@ -77,6 +79,13 @@ class StoreExamRequest extends FormRequest
             'questions.*.question_options.*.label' => ['nullable', 'string', 'max:255'],
             'questions.*.question_options.*.is_correct' => ['nullable', 'boolean'],
         ];
+
+        if (Tenancy::enabled()) {
+            $rules['organization_id'] = ['required', 'uuid', 'exists:organizations,id'];
+            $rules['department_id'] = ['required', 'uuid', 'exists:departments,id'];
+        }
+
+        return $rules;
     }
 
     protected function prepareForValidation(): void
@@ -238,6 +247,18 @@ class StoreExamRequest extends FormRequest
 
                     if (($question['type'] ?? null) === Question::TYPE_FILL_IN && empty($question['accepted_answers'])) {
                         $validator->errors()->add("questions.$index.accepted_answers", "Question {$questionNumber} needs at least one accepted answer.");
+                    }
+                }
+
+                if (Tenancy::enabled() && filled($this->input('department_id'))) {
+                    $department = Department::query()->find($this->input('department_id'));
+
+                    $organizationId = $this->user()?->isPlatformAdmin()
+                        ? $this->input('organization_id')
+                        : $this->user()?->organization_id;
+
+                    if ($department === null || $department->organization_id !== $organizationId) {
+                        $validator->errors()->add('department_id', 'The department must belong to the selected organisation.');
                     }
                 }
             },

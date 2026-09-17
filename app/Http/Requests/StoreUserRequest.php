@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Department;
 use App\Models\User;
+use App\Support\Tenancy;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreUserRequest extends FormRequest
 {
@@ -14,7 +17,7 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return (bool) $this->user()?->isAdmin();
+        return (bool) $this->user()?->canManageUsers();
     }
 
     /**
@@ -30,7 +33,7 @@ class StoreUserRequest extends FormRequest
             $user = User::query()->find($user);
         }
 
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'role' => ['required', Rule::in([User::ROLE_ADMIN, User::ROLE_EXAMINER])],
@@ -39,6 +42,35 @@ class StoreUserRequest extends FormRequest
                 'string',
                 'min:8',
             ]),
+        ];
+
+        if (Tenancy::enabled()) {
+            $rules['organization_id'] = ['nullable', 'uuid', Rule::exists('organizations', 'id')];
+            $rules['department_id'] = ['nullable', 'uuid', Rule::exists('departments', 'id')];
+            $rules['is_department_admin'] = ['boolean'];
+        }
+
+        return $rules;
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if (! Tenancy::enabled() || ! filled($this->input('department_id'))) {
+                    return;
+                }
+
+                $department = Department::query()->find($this->input('department_id'));
+
+                $organizationId = $this->user()?->isPlatformAdmin()
+                    ? $this->input('organization_id')
+                    : $this->user()?->organization_id;
+
+                if ($department === null || $department->organization_id !== $organizationId) {
+                    $validator->errors()->add('department_id', 'The department must belong to the selected organisation.');
+                }
+            },
         ];
     }
 }
