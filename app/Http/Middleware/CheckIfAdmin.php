@@ -35,7 +35,29 @@ class CheckIfAdmin
             return false;
         }
 
-        if ($user->isAdmin() && (! Tenancy::enabled() || $user->isPlatformAdmin())) {
+        if (Tenancy::enabled() && $user->isPlatformAdmin()) {
+            $platformOnlyPrefixes = [
+                'admin/dashboard',
+                'admin/organizations',
+                'admin/setting',
+                'admin/log',
+                'admin/activity-log',
+            ];
+
+            foreach ($platformOnlyPrefixes as $prefix) {
+                if ($request->is($prefix) || $request->is($prefix.'/*')) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (Tenancy::enabled() && $user->organization?->is_frozen) {
+            return false;
+        }
+
+        if ($user->isAdmin() && ! Tenancy::enabled()) {
             return true;
         }
 

@@ -7,15 +7,21 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\SuspiciousActivity;
 use App\Models\User;
+use App\Support\Tenancy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class AdminDashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(): View|RedirectResponse
     {
         /** @var User $user */
         $user = backpack_user();
+
+        if (Tenancy::enabled() && $user->isPlatformAdmin()) {
+            return redirect()->route('admin.organizations.index');
+        }
 
         return view('admin.dashboard', [
             'totalExams' => $this->scopedExams($user)->count(),

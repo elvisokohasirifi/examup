@@ -65,11 +65,17 @@ class TakeExam extends Component
         $this->accessLink = ExamAccessLink::query()
             ->where('public_key', $publicKey)
             ->where('access_token', $accessToken)
-            ->with(['exam.questions.options'])
+            ->with(['exam.organization', 'exam.questions.options'])
             ->firstOrFail();
 
         $this->exam = $this->accessLink->exam;
         $this->candidate['student_email'] = $this->accessLink->email ?? '';
+
+        if ($this->exam->organization?->is_frozen) {
+            $this->ensureExamIsAvailable();
+
+            return;
+        }
 
         $storedAttempt = $resumeExamAttempt->fromSession(
             $this->accessLink,
@@ -824,6 +830,13 @@ class TakeExam extends Component
 
     private function ensureExamIsAvailable(): bool
     {
+        if ($this->exam->organization?->is_frozen) {
+            $this->isUnavailable = true;
+            $this->unavailableMessage = 'This organisation is not currently accepting exam responses.';
+
+            return false;
+        }
+
         if ($this->exam->hasExpired()) {
             $this->isUnavailable = true;
             $this->unavailableMessage = 'This exam is no longer accepting responses because its availability period has ended.';

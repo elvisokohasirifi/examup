@@ -13,7 +13,7 @@ class ExamPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->canAccessBackOffice();
+        return $user->canAccessBackOffice() && (! Tenancy::enabled() || ! $user->isPlatformAdmin());
     }
 
     /**
@@ -33,6 +33,10 @@ class ExamPolicy
      */
     public function create(User $user): bool
     {
+        if (Tenancy::enabled() && $user->isPlatformAdmin()) {
+            return false;
+        }
+
         return $user->isAdmin() || $user->isExaminer();
     }
 
@@ -46,8 +50,7 @@ class ExamPolicy
                 return false;
             }
 
-            return $user->isPlatformAdmin()
-                || $user->isOrganizationAdmin()
+            return $user->isOrganizationAdmin()
                 || $user->isDepartmentAdmin()
                 || $exam->created_by === $user->id;
         }
@@ -60,6 +63,14 @@ class ExamPolicy
      */
     public function delete(User $user, Exam $exam): bool
     {
+        if (Tenancy::enabled() && $user->isPlatformAdmin()) {
+            return false;
+        }
+
+        if (Tenancy::enabled()) {
+            return $this->update($user, $exam);
+        }
+
         return $user->isAdmin() || $exam->created_by === $user->id;
     }
 
@@ -77,14 +88,14 @@ class ExamPolicy
     public function forceDelete(User $user, Exam $exam): bool
     {
         return Tenancy::enabled()
-            ? $user->isPlatformAdmin() || ($user->isOrganizationAdmin() && $user->organization_id === $exam->organization_id)
+            ? $user->isOrganizationAdmin() && $user->organization_id === $exam->organization_id
             : $user->isAdmin();
     }
 
     private function sharesVisibleTenant(User $user, Exam $exam): bool
     {
         if ($user->isPlatformAdmin()) {
-            return true;
+            return false;
         }
 
         if ($user->organization_id === null || $user->organization_id !== $exam->organization_id) {

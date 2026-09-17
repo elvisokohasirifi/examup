@@ -17,7 +17,17 @@ class Organization extends Model
     use LogsModelActivity;
     use UsesUuid;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'is_frozen'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_frozen' => 'boolean',
+        ];
+    }
 
     public function users(): HasMany
     {

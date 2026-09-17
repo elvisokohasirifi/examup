@@ -120,6 +120,8 @@ class Exam extends Model
         }
 
         if ($user->isPlatformAdmin()) {
+            $query->whereRaw('1 = 0');
+
             return;
         }
 

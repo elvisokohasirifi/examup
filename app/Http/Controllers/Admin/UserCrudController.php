@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\UserAddedToOrganizationNotification;
 use App\Support\Tenancy;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -80,7 +81,15 @@ class UserCrudController extends CrudController
     {
         CRUD::setRequest($this->normalizeTenantAssignment($this->sanitizePasswordField(CRUD::validateRequest())));
 
-        return $this->traitStore();
+        $response = $this->traitStore();
+        $addedUser = CRUD::getCurrentEntry();
+
+        if (Tenancy::enabled() && $addedUser instanceof User) {
+            $addedUser->loadMissing(['organization', 'department']);
+            $addedUser->notify(new UserAddedToOrganizationNotification($addedUser, backpack_user()));
+        }
+
+        return $response;
     }
 
     public function update(): RedirectResponse

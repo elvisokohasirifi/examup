@@ -130,13 +130,13 @@ class User extends Authenticatable
             return $this->isAdmin();
         }
 
-        return $this->isPlatformAdmin() || $this->isOrganizationAdmin() || $this->isDepartmentAdmin();
+        return $this->isOrganizationAdmin() || $this->isDepartmentAdmin();
     }
 
     public function canManageDepartments(): bool
     {
         return Tenancy::enabled()
-            && ($this->isPlatformAdmin() || $this->isOrganizationAdmin());
+            && $this->isOrganizationAdmin();
     }
 
     public function isExaminer(): bool

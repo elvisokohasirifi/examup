@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ExamCrudController;
 use App\Http\Controllers\Admin\ExamResultsController;
 use App\Http\Controllers\Admin\HelpController;
 use App\Http\Controllers\Admin\MicrosoftFormsImportController;
+use App\Http\Controllers\Admin\PlatformOrganizationController;
 use App\Http\Controllers\Admin\RegradeExamAttemptsController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,9 @@ Route::group([
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
     Route::get('dashboard', AdminDashboardController::class)->name('backpack.dashboard');
+    Route::get('organizations', [PlatformOrganizationController::class, 'index'])->name('admin.organizations.index');
+    Route::post('organizations/{organization}/freeze', [PlatformOrganizationController::class, 'freeze'])->name('admin.organizations.freeze');
+    Route::post('organizations/{organization}/unfreeze', [PlatformOrganizationController::class, 'unfreeze'])->name('admin.organizations.unfreeze');
     Route::get('user/assign-department', [BulkAssignDepartmentController::class, 'create'])->name('admin.users.assign-department');
     Route::post('user/assign-department', [BulkAssignDepartmentController::class, 'store'])->name('admin.users.assign-department.store');
     Route::crud('department', DepartmentCrudController::class);
